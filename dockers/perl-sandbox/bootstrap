@@ -1,0 +1,26 @@
+#!/bin/sh
+
+PERL5LIB=$LAMBDA_TASK_ROOT/lib/perl
+PERL5LIB=$PERL5LIB:/opt/lib/perl
+PERL5LIB=$PERL5LIB:/opt/lib/5.22.2
+PERL5LIB=$PERL5LIB:/opt/lib/5.22.2/x86_64-linux-thread-multi
+PERL5LIB=$PERL5LIB:/opt/lib/perl5/site_perl/5.22.2
+PERL5LIB=$PERL5LIB:/opt/lib/perl5/site_perl/5.22.2/x86_64-linux-thread-multi
+PERL5LIB=$PERL5LIB:/opt/lib/perl5/5.22.2
+PERL5LIB=$PERL5LIB:/opt/lib/perl5/5.22.2/x86_64-linux-thread-multi
+PERL5LIB=$PERL5LIB:/opt/share/perl/site_perl/5.22.2
+PERL5LIB=$PERL5LIB:/opt/share/perl/site_perl/5.22.2/x86_64-linux-thread-multi
+PERL5LIB=$PERL5LIB:/opt/share/perl/5.22.2
+PERL5LIB=$PERL5LIB:/opt/share/perl/5.22.2/x86_64-linux-thread-multi
+PERL5LIB=$PERL5LIB:/opt/lib/perl/site_perl/5.22.2
+PERL5LIB=$PERL5LIB:/opt/lib/perl/site_perl/5.22.2/x86_64-linux-thread-multi
+PERL5LIB=$PERL5LIB:/opt/lib/perl/5.22.2
+PERL5LIB=$PERL5LIB:/opt/lib/perl/5.22.2
+PERL5LIB=$PERL5LIB:/opt/lib/site_perl/5.22.2
+PERL5LIB=$PERL5LIB:/opt/lib/site_perl/5.22.2/x86_64-linux-thread-multi
+PERL5LIB=$PERL5LIB:/opt/lib/perl5
+PERL5LIB=$PERL5LIB:/opt/lib/perl5/x86_64-linux-thread-multi
+
+PATH=$LAMBDA_TASK_ROOT/bin:/opt/bin:$PATH
+
+exec /opt/bin/perl /opt/bootstrap.lambda.pl

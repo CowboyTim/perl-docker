@@ -64,4 +64,16 @@ RUN find /opt/lib/perl5/ -type f -name '.packlist'|xargs rm
 RUN find /opt/lib/perl5/ -type f -name '*.pod'    |xargs rm
 RUN find /opt/lib/perl5/ -type f -name '*.h'      |xargs rm
 
+# "copy" the glibc and others to /opt/lib64, make some symlinks
+RUN    mkdir -p                         /opt/lib64/ \
+    && cp -a /usr/lib64/ld-2*.so        /opt/lib64/ \
+    && cp -a /usr/lib64/libpthread*.so* /opt/lib64/ \
+    && cp -a /usr/lib64/libdl*.so*      /opt/lib64/ \
+    && cp -a /usr/lib64/libcrypt*.so*   /opt/lib64/ \
+    && cp -a /usr/lib64/libm*.so*       /opt/lib64/ \
+    && cp -a /usr/lib64/libutil*.so*    /opt/lib64/ \
+    && cp -a /usr/lib64/libc*.so*       /opt/lib64/ \
+    && (cd /opt && ln -s / opt) \
+    && (cd /opt && ln -s / usr)
+
 ENTRYPOINT ["/busybox", "sh"]

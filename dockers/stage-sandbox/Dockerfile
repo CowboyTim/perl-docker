@@ -69,10 +69,12 @@ RUN    mkdir -p                         /opt/lib64/ \
     && cp -a /usr/lib64/ld-2*.so        /opt/lib64/ \
     && cp -a /usr/lib64/libpthread*.so* /opt/lib64/ \
     && cp -a /usr/lib64/libdl*.so*      /opt/lib64/ \
-    && cp -a /usr/lib64/libcrypt*.so*   /opt/lib64/ \
-    && cp -a /usr/lib64/libm*.so*       /opt/lib64/ \
+    && cp -a /usr/lib64/libcrypt.so*    /opt/lib64/ \
+    && cp -a /usr/lib64/libm.so*        /opt/lib64/ \
+    && cp -a /usr/lib64/libm-*.so*      /opt/lib64/ \
     && cp -a /usr/lib64/libutil*.so*    /opt/lib64/ \
-    && cp -a /usr/lib64/libc*.so*       /opt/lib64/ \
+    && cp -a /usr/lib64/libc.so*        /opt/lib64/ \
+    && cp -a /usr/lib64/libc-*.so*      /opt/lib64/ \
     && (cd /opt && ln -s / opt) \
     && (cd /opt && ln -s / usr)
 

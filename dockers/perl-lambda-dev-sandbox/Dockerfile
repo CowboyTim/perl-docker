@@ -16,7 +16,19 @@ COPY --from=build-helper    / /
 COPY --from=lambda-sb-perl  /opt /opt
 
 ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/5.32.0/x86_64/CORE
-ENV PERL5LIB=/opt/lib64/perl5:/opt/lib64/perl5/vendor_perl:/opt/lib/perl5:/opt/lib/perl5/vendor_perl:/opt/lib/perl5/auto:/opt/lib/perl5/vendor_perl/auto:/opt/lib/perl5:/opt/lib/perl5/x86_64-linux-thread-multi:/opt/lib/perl5/x86_64-linux-thread-multi/auto
+ENV PERL5LIB=\
+/opt/lib/perl5:\
+/opt/lib/perl5/vendor_perl:\
+/opt/lib/perl5/auto:\
+/opt/lib/perl5/vendor_perl/auto:\
+/opt/lib/perl5/x86_64-linux-thread-multi:\
+/opt/lib/perl5/x86_64-linux-thread-multi/auto\
+/opt/lib64/perl5:\
+/opt/lib64/perl5/vendor_perl:\
+/opt/lib64/perl5/auto:\
+/opt/lib64/perl5/vendor_perl/auto:\
+/opt/lib64/perl5/x86_64-linux-thread-multi:\
+/opt/lib64/perl5/x86_64-linux-thread-multi/auto
 
 # install perl extra cpan's
 RUN INSTALL_BASE=/opt /opt/bin/cpan -j /opt/cpan_config.pl -Ti Storable

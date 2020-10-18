@@ -1,9 +1,10 @@
 
 no warnings 'once';
+my $b_dir        = "/opt/tmp/cpan_local";
 my $base_dir     = $ENV{CPAN_HOME}    || "/opt/tmp/cpan_home_".($ENV{USER}||'nouser');
-my $install_base = $ENV{INSTALL_BASE} || "/opt/tmp/cpan_local";
+my $install_base = $ENV{INSTALL_BASE} || $b_dir;
 $ENV{PERL5LIB} ||= "";
-$ENV{PERL5LIB}  .= "/opt/tmp/cpan_local/lib/perl5";
+$ENV{PERL5LIB}  .= "$b_dir/lib/perl5:$b_dir/lib/perl5/auto:$b_dir/lib/perl5/x86_64:$b_dir/lib/perl5/x86_64/auto";
 $CPAN::Config = {
   'applypatch' => q[],
   'auto_commit' => q[0],

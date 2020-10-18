@@ -1,9 +1,9 @@
 
 no warnings 'once';
-my $base_dir     = $ENV{CPAN_HOME}    || "/var/tmp/cpan_home_".($ENV{USER}||'nouser');
-my $install_base = $ENV{INSTALL_BASE} || "/var/tmp/local";
+my $base_dir     = $ENV{CPAN_HOME}    || "/opt/tmp/cpan_home_".($ENV{USER}||'nouser');
+my $install_base = $ENV{INSTALL_BASE} || "/opt/tmp/cpan_local";
 $ENV{PERL5LIB} ||= "";
-$ENV{PERL5LIB}  .= "/var/tmp/local/lib/perl5";
+$ENV{PERL5LIB}  .= "/opt/tmp/cpan_local/lib/perl5";
 $CPAN::Config = {
   'applypatch' => q[],
   'auto_commit' => q[0],
@@ -48,7 +48,7 @@ $CPAN::Config = {
   'perl5lib_verbosity' => q[none],
   'prefer_external_tar' => q[1],
   'prefer_installer' => q[MB],
-  'prefs_dir' => q[/var/tmp/prefs],
+  'prefs_dir' => "$base_dir",
   'prerequisites_policy' => q[follow],
   'recommends_policy' => q[1],
   'scan_cache' => q[atstart],

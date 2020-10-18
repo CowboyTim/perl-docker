@@ -38,10 +38,10 @@ docker_tag.%:
 docker_save.%: mkdist
 		cd $(TMPDIR)/tmpdist/ && (docker save $(DOCKER_REGISTRY)/$*:latest|tar xfO - --wildcards '*/layer.tar'|tar xf -) && chmod -R +w $(TMPDIR)/tmpdist/
 
-save_lambda_docker.%: perl_docker build_docker.perl-lambda-sandbox
+save_lambda_docker.%: perl_docker build_docker.perl-lambda-dev-sandbox build_docker.perl-lambda
 		cd $(TMPDIR)/tmpdist/ && (docker save $(DOCKER_REGISTRY)/$*:latest|tar xfO - --wildcards '*/layer.tar'|tar xf -) && chmod -R +w $(TMPDIR)/tmpdist/
 
-aws_lambda_layer_runtime_zip: mkdist copy_bootstrap save_lambda_docker.perl-lambda-sandbox
+aws_lambda_layer_runtime_zip: mkdist copy_bootstrap save_lambda_docker.perl-lambda
 		cd $(TMPDIR)/tmpdist/ && zip -r --symlinks $(TMPDIR)/dist/perl-lambda-runtime.zip *
 
 publish_aws_lambda_layer_runtime_zip:
@@ -56,7 +56,7 @@ publish_aws_lambda_layer_runtime_zip_terraform:
 publish_new_runtime: clean mkdist copy_bootstrap docker_save.perl-sandbox aws_lambda_layer_runtime_zip publish_aws_lambda_layer_runtime_zip_terraform
 
 copy_bootstrap:
-		cp dockers/perl-lambda-sandbox/bootstrap.lambda.pl dockers/perl-lambda-sandbox/bootstrap $(TMPDIR)/tmpdist/ && chmod +x $(TMPDIR)/tmpdist/bootstrap*
+		cp dockers/perl-lambda/bootstrap.lambda.pl dockers/perl-lambda/bootstrap $(TMPDIR)/tmpdist/ && chmod +x $(TMPDIR)/tmpdist/bootstrap*
 
 docker_prune:
 		docker image prune -f

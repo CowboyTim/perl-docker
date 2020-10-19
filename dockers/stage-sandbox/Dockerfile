@@ -47,22 +47,25 @@ ENV PERL5LIB=\
 
 # install CPAN modules for CPAN in /opt/tmp/cpan_local. This is handled by cpan_config.pl
 COPY cpan_config.pl /opt
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  ExtUtils::PkgConfig
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  ExtUtils::Helpers
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  CPAN
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  HTTP::Date
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  HTML::Tiny
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  install
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Canary::Stability
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Algorithm::Diff
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Spiffy
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Text::Diff
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Base
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Deep
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::LeakTrace
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  inc::latest
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Module::Build
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  common::sense
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  ExtUtils::PkgConfig
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  ExtUtils::Helpers
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  CPAN
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  HTTP::Date
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  HTML::Tiny
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  install
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Canary::Stability
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Algorithm::Diff
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Spiffy
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Text::Diff
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Base
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Deep
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::LeakTrace
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  inc::latest
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Module::Build
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  common::sense
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::More
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Simple
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Builder
 
 # cleanup stuff in /opt we never will need
 RUN rm -rf /opt/src

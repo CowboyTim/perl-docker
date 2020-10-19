@@ -13,7 +13,7 @@ $ENV{LAMBDA_TASK_ROOT}             ||= '';
 # for when we just want to execute a script
 $ENV{SCRIPT_EXEC}                  ||= 0;
 # default in process libcurl (as opposed to `` fork/exec of curl)
-$ENV{USE_LIBCURL}                  ||= 1;
+$ENV{USE_HTTPMETHOD}               ||= 1;
 # always clean up /tmp (it's small, and we want to sandbox as much as possible INVARIANT)
 $ENV{INVARIANT_TMP}                ||= 1;
 # default print output
@@ -65,8 +65,8 @@ sub init_handler {
     if($@){
         # FIXME: improve/fix/test/implement this check
         my $handle_request_data = "{\"errorMessage\" : \"Failed to load function $ENV{_HANDLER}: $@\", \"errorType\" : \"InvalidFunctionException\"}";
-        if($ENV{USE_LIBCURL}){
-            Util::HTTP::http_do('POST', "http://$ENV{AWS_LAMBDA_RUNTIME_API}/2018-06-01/runtime/init/error", undef, \$handle_request_data);
+        if($ENV{USE_HTTPMETHOD}){
+            http_do('POST', "http://$ENV{AWS_LAMBDA_RUNTIME_API}/2018-06-01/runtime/init/error", $handle_request_data);
         } else {
             # handle '' escaping for shells
             $handle_request_data =~ s/'/'"'"'/g;
@@ -92,14 +92,14 @@ sub infinite_loop {
     local $SIG{TERM} = $s_handler;
     local @ARGV = ();
     while($loop){
-        p_log("ENV ".join(',', (map {"$_=".($ENV{$_}//'')} qw(USE_LIBCURL INVARIANT_TMP PRINT_LOG SCRIPT_EXEC SCRIPT_NAMESPACE))));
+        p_log("ENV ".join(',', (map {"$_=".($ENV{$_}//'')} qw(USE_HTTPMETHOD INVARIANT_TMP PRINT_LOG SCRIPT_EXEC SCRIPT_NAMESPACE))));
         # fetch a new lambda invocation
-        my ($event_data, $request_headers, $invocation_id) = fetch_new();
+        my ($event_data, $invocation_id) = fetch_new();
         my $s_abbr = "$info_abbr [$invocation_id]";
         p_log($s_abbr);
 
         # first process the request
-        my ($response_t, $handle_request_data) = process_request($invocation_id, $event_data, $request_headers);
+        my ($response_t, $handle_request_data) = process_request($invocation_id, $event_data);
 
         # post response
         p_log("$s_abbr $response_t");
@@ -109,7 +109,7 @@ sub infinite_loop {
 }
 
 sub process_request {
-    my ($invocation_id, $input_data, $request_headers) = @_;
+    my ($invocation_id, $input_data) = @_;
 
     # now execute what was requested
     my $lambda_context = {};
@@ -284,10 +284,12 @@ sub process_request {
 
 sub fetch_new {
     my ($event_data, $next_headers);
-    if($ENV{USE_LIBCURL}){
-        my $next_lambda = Util::HTTP::http_do('GET', "http://$ENV{AWS_LAMBDA_RUNTIME_API}/2018-06-01/runtime/invocation/next");
-        $event_data    = $next_lambda->{body_ref};
-        $next_headers  = $next_lambda->{headers_ref};
+    my $invocation_id;
+    if($ENV{USE_HTTPMETHOD}){
+        my $next_lambda = http_do('GET', "http://$ENV{AWS_LAMBDA_RUNTIME_API}/2018-06-01/runtime/invocation/next");
+        $event_data    = $next_lambda->{content};
+        $next_headers  = $next_lambda->{headers};
+        $invocation_id = $next_headers->{"lambda-runtime-aws-request-id"};
     } else {
         # new request
         my $tmp_headers_fn = "/tmp/h_tmp.$$.".time();
@@ -297,19 +299,19 @@ sub fetch_new {
             my $signal_value = $? & 127;
             die "problem running curl new lambda fetch: signal=$signal_value,exit=$exit_value\n";
         }
-        $next_headers = do {open(my $_h_fn, '<', $tmp_headers_fn); <$_h_fn>};
+        $next_headers  = do {open(my $_h_fn, '<', $tmp_headers_fn); <$_h_fn>};
+        $invocation_id = (grep {s/^Lambda-Runtime-Aws-Request-Id: (.*?)\r?$/$1/} split m/\n/, ($next_headers//''))[0];
     }
-    my $invocation_id = (grep {s/^Lambda-Runtime-Aws-Request-Id: (.*?)\r?$/$1/} split m/\n/, ($next_headers//''))[0];
     die "no $invocation_id found\n" unless length($invocation_id//'');
-    return ($event_data, $next_headers, $invocation_id);
+    return ($event_data, $invocation_id);
 }
 
 sub post_response {
     my ($invocation_id, $response_t, $handle_request_data) = @_;
     $response_t //= 'response';
     $response_t   = 'error' unless $response_t =~ m/^(error|response)$/;
-    if($ENV{USE_LIBCURL}){
-        Util::HTTP::http_do('POST', "http://$ENV{AWS_LAMBDA_RUNTIME_API}/2018-06-01/runtime/invocation/$invocation_id/$response_t", undef, \$handle_request_data);
+    if($ENV{USE_HTTPMETHOD}){
+        http_do('POST', "http://$ENV{AWS_LAMBDA_RUNTIME_API}/2018-06-01/runtime/invocation/$invocation_id/$response_t", $handle_request_data);
     } else {
         # handle '' escaping for shells
         $handle_request_data =~ s/'/'"'"'/g;
@@ -358,302 +360,13 @@ sub p_log {
     return print "$msg\n";
 }
 
-
-# this is copy-pasted for the moment and can be extremely slimmed down
-
-package Util::HTTP;
-
-use Errno qw(EINTR EAGAIN);
-
-use WWW::Curl::Easy;
-use WWW::Curl::Multi;
-use URI;
-
-our @EXPORT_OK = qw(
-    http_do
-    http_handle
-    http_request
-    http_request_prepare
-    http_request_schedule
-    http_request_schedule_wait_all
-    http_request_scheduled_currently
-    http_request_schedule_loop
-);
-our %EXPORT_TAGS = (all => \@EXPORT_OK);
-
 sub http_do {
-    my ($http_method, $url, $headers, $request_body_ref, $cfg, $curl_state_ref) = @_;
-    $cfg //= {};
-    $$curl_state_ref //= http_handle({
-        useragent         => 'PP/1.1',
-        (($cfg->{username} and $cfg->{password})?(
-            user          => $cfg->{username},
-            pass          => $cfg->{password}
-        ):()),
-        httpsverify       => $cfg->{httpsverify}?0x01:0x0,
-        ca_path           => $cfg->{capath},
-        ca_cert           => $cfg->{certfile},
-        ssl_pass          => $cfg->{pem_pass},
-        ($cfg->{bind_ip}?(
-            bind_ip       => $cfg->{bind_ip}
-        ):()),
-        timeout           => 0,
-        verbose           => 0,
-        %{$cfg},
-    });
-    my $result = eval {
-        return http_request($http_method, $url, $headers, $request_body_ref, $curl_state_ref, $cfg);
-    };
-    if($@ or !defined($result) or ($result and not($result->{http_code} =~ m/^(100|200|201|202|307|206|204)$/))){
-        die "http error: ".($result->{http_code}//'<no http code>').": ".($result->{errstring}||$result->{body}||$@)."\n";
+    my ($http_method, $url, $request_body) = @_;
+    my $response = cpan_load("HTTP::Tiny")->new()->request($http_method, $url, (defined $request_body?{contents => $request_body}:()));
+    if(!$response or !$response->{success}){
+        die "http error: ".($response->{status}//'<no http code>').": ".($response->{reason}||$response->{content})."\n";
     }
-    return $result;
-}
-
-sub http_request_schedule {
-    my ($mcurl_state_ref, $curl_handle, $c_sub, $e_sub, $response_headers_ref) = @_;
-    my $_st = $mcurl_state_ref //= {still_running => 0};
-    $_st->{mcurl} //= WWW::Curl::Multi->new();
-
-    # set an id
-    my $cid = $curl_handle->getinfo(CURLINFO_PRIVATE) // do {
-        $curl_handle->setopt(CURLOPT_PRIVATE, "$curl_handle");
-        $curl_handle->getinfo(CURLINFO_PRIVATE);
-    };
-
-    # keep the response headers, this is kept in the mcurl state
-    $response_headers_ref //= \(my $_dummy = '');
-    $curl_handle->setopt(CURLOPT_WRITEHEADER, $response_headers_ref);
-
-    # run loop once, we might have stuff todo
-    http_request_schedule_loop($_st);
-
-    # but block until we have < max_parallel
-    if(defined $_st->{max_parallel}){
-        while(($_st->{still_running}//0) >= $_st->{max_parallel}){
-            http_request_schedule_loop($_st);
-        }
-    }
-
-    # actually schedule the request, keeping the response callback
-    $_st->{h}{$cid} = {ch => $curl_handle, c => $c_sub, (defined $e_sub?(e => $e_sub):()), h => $response_headers_ref};
-    $_st->{mcurl}->add_handle($curl_handle);
-    return;
-}
-
-sub http_request_schedule_loop {
-    my ($_st) = @_;
-    return unless $_st->{mcurl};
-    return unless http_request_scheduled_currently($_st);
-    $_st->{still_running} = $_st->{mcurl}->perform;
-    my ($rd_fd, $wr_fd, $e_fd) = $_st->{mcurl}->fdset;
-    my $r;
-    if(@{$rd_fd} or @{$wr_fd}){
-        local $!;
-        my $rd_fd_bm = '';
-        my $wr_fd_bm = '';
-        my $e_fd_bm  = '';
-        vec($rd_fd_bm, $_, 1) = 1 for @{$rd_fd};
-        vec($wr_fd_bm, $_, 1) = 1 for @{$wr_fd};
-        vec($e_fd_bm,  $_, 1) = 1 for @{$e_fd};
-        $r = select(my $rout = $rd_fd_bm, my $wout = $wr_fd_bm, $e_fd_bm, 0.1) //
-            do {die "system call failed: $!\n" unless $!{EINTR} || $!{EAGAIN} || $!{EINPROGRESS}};
-    } else {
-        # http://manpages.ubuntu.com/manpages/trusty/man3/curl_multi_fdset.3.html
-        local $!;
-        $r = select(undef, undef, undef, 0.1);
-    }
-
-    $_st->{still_running} = $_st->{mcurl}->perform;
-    while (my ($cid, $return_value) = $_st->{mcurl}->info_read){
-        last unless defined $cid;
-        my $http_h = delete $_st->{h}{$cid};
-        my $curl_h = delete $http_h->{ch};
-
-        my %res;
-        $res{errcode}     = $return_value;
-        $res{http_code}   = $curl_h->getinfo(CURLINFO_HTTP_CODE) // 0;
-        $res{http_err}    = $curl_h->strerror($res{errcode}) if ($res{errcode}//'0') ne '0';
-        $res{errstring}   = $curl_h->errbuf;
-        $res{http_req_id} = $cid;
-        $res{headers_ref} = ${$http_h->{h}//\(my $_dummy = '')};
-        my $r_headers = $res{headers_hash} = {};
-        foreach my $kv (split m/\r\n/, ($res{headers_ref}//'')){
-            my @h_kv = split m/: /, $kv, 2;
-            if(@h_kv >= 2){
-                if(!defined $r_headers->{$h_kv[0]}){
-                    $r_headers->{$h_kv[0]} = $h_kv[1];
-                } else {
-                    push @{$r_headers->{$h_kv[0]}}, $h_kv[1];
-                }
-            }
-        }
-
-        eval {&{$http_h->{c}}($curl_h, \%res)};
-        if($@){
-            chomp(my $err = $@);
-            die "$err\n";
-        }
-    }
-    return;
-}
-
-sub http_request_scheduled_currently {
-    my ($mcurl_state_ref) = @_;
-    return scalar(keys %{$mcurl_state_ref->{h}//{}});
-}
-
-sub http_request_schedule_wait_all {
-    my ($_st) = @_;
-    return unless $_st->{mcurl};
-    do {
-        http_request_schedule_loop($_st);
-    } while ($_st->{still_running} or http_request_scheduled_currently($_st));
-    return;
-}
-
-sub http_request {
-    my ($method, $url, $headers, $request_body_ref, $curl_state_ref, $cfg) = @_;
-    $request_body_ref //= \(my $dummy = '');
-    my $curl_h = http_request_prepare($method, $url, $headers, $request_body_ref, $curl_state_ref, $cfg, \(my $response_headers = ''), \(my $response_body_ref = ''));
-
-    my %res;
-    $res{errcode}     = $curl_h->perform;
-    $res{http_code}   = $curl_h->getinfo(CURLINFO_HTTP_CODE) // 0;
-    $res{http_err}    = $curl_h->strerror($res{errcode}) if ($res{errcode}//'0') ne '0';
-    $res{errstring}   = $curl_h->errbuf;
-    $res{body_ref}    = $response_body_ref if length($response_body_ref);
-    $res{body_ref}  //= $dummy             if length($dummy);
-    $res{headers_ref} = $response_headers  if length($response_headers);
-    return \%res;
-}
-
-sub http_request_prepare {
-    my ($method, $url, $headers, $request_body_ref, $curl_state_ref, $cfg, $response_headers_ref, $response_body_ref) = @_;
-
-    $request_body_ref     //= \(my $_dummy_r = '');
-    $response_headers_ref //= \(my $_dummy_h = '');
-    $response_body_ref    //= \(my $_dummy_b = '');
-    my $curl = $$curl_state_ref //= http_handle($cfg//{});
-
-    my $u = URI->new($url);
-    $curl->setopt(CURLOPT_URL,                        $u->as_string            );
-    $curl->setopt(CURLOPT_PORT,                       $u->port                 );
-    $curl->setopt(CURLOPT_WRITEHEADER,                $response_headers_ref    );
-
-    $headers          //= {};
-    $method             = uc($method//'GET');
-
-    $curl->setopt( CURLOPT_CUSTOMREQUEST,             $method                  );
-    if      ($method eq 'GET'){
-        if(ref($request_body_ref) eq 'CODE'){
-            $curl->setopt( CURLOPT_WRITEDATA,         $response_body_ref       ); # the provided callback will handle it anyways
-            $curl->setopt( CURLOPT_WRITEFUNCTION,     sub {
-                my (@args) = @_;
-                return &{$request_body_ref}(@args, $response_headers_ref, ($curl->getinfo(CURLINFO_HTTP_CODE)//0));
-            });
-        } else {
-            $curl->setopt( CURLOPT_WRITEDATA,         $request_body_ref        );
-            $curl->setopt( CURLOPT_WRITEFUNCTION,     \&_writer_callback       );
-        }
-    } elsif ($method eq 'PUT' or $method eq 'POST'){
-        $curl->setopt( CURLOPT_UPLOAD,                1                        );
-        if(ref($request_body_ref) eq 'CODE'){
-            $curl->setopt( CURLOPT_READDATA,          [\(my $_d=''), 0, 0]     ); # the provided callback will handle it anyways
-            $curl->setopt( CURLOPT_READFUNCTION,      $request_body_ref        );
-            my $sz = $headers->{'Content-Length'} // $headers->{'content-length'};
-            $curl->setopt( CURLOPT_INFILESIZE_LARGE,  $sz) if defined $sz;
-        } else {
-            $curl->setopt( CURLOPT_READDATA,          [$request_body_ref,0,length($$request_body_ref)]);
-            $curl->setopt( CURLOPT_READFUNCTION,      \&_reader_callback       );
-            my $sz = $headers->{'Content-Length'} // $headers->{'content-length'} //length($$request_body_ref);
-            $curl->setopt( CURLOPT_INFILESIZE_LARGE,  $sz);
-        }
-        $curl->setopt( CURLOPT_WRITEDATA,             $response_body_ref       ); # the provided callback will handle it anyways
-        $curl->setopt( CURLOPT_WRITEFUNCTION,         \&_writer_callback       );
-    } elsif ($method eq 'HEAD'){
-        $curl->setopt( CURLOPT_NOBODY,                1                        );
-    }
-
-    $curl->setopt( CURLOPT_HTTPHEADER,                [map {"$_: $headers->{$_}"} grep {defined $headers->{$_}} keys %{$headers//{}}]) if keys %{$headers};
-
-    return $curl;
-}
-
-sub http_handle {
-    my ($args) = @_;
-
-    my $HTTP_VERSION;
-    $HTTP_VERSION = CURL_HTTP_VERSION_1_1 if ($args->{httpver}//'') eq '1.1';
-    $HTTP_VERSION = CURL_HTTP_VERSION_1_0 if ($args->{httpver}//'') eq '1.0';
-
-    my $curl = $args->{curl} // WWW::Curl::Easy->new();
-    $curl->setopt( CURLOPT_TCP_NODELAY,            $args->{tcp_nodelay}   ) if exists $args->{tcp_nodelay};
-    $curl->setopt( CURLOPT_INTERFACE,              $args->{bind_ip}       ) if $args->{bind_ip};
-    $curl->setopt( CURLOPT_HTTP_VERSION,           $HTTP_VERSION          ) if $HTTP_VERSION;
-    $curl->setopt( CURLOPT_CONNECTTIMEOUT,         $args->{timeout}//120  );
-    $curl->setopt( CURLOPT_TIMEOUT,                $args->{timeout}//120  );
-    $curl->setopt( CURLOPT_USERAGENT,              $args->{useragent}  // 'PP/1.0' );
-    $curl->setopt( CURLOPT_USERNAME,               $args->{user}          ) if $args->{user};
-    $curl->setopt( CURLOPT_PASSWORD,               $args->{pass}          ) if defined $args->{pass};
-    $curl->setopt( CURLOPT_FOLLOWLOCATION,         1                      ) if $args->{follow_last};
-    $curl->setopt( CURLOPT_REFERER,                $args->{referer}       ) if $args->{referer};
-    $curl->setopt( CURLOPT_FTP_USE_EPSV,           0                      ) if $args->{passive};
-    $curl->setopt( CURLOPT_RANGE,                  $args->{range}         ) if $args->{range};
-    if($args->{proxy}){
-        $curl->setopt( CURLOPT_PROXY,              $args->{proxy}             );
-        $curl->setopt( CURLOPT_PROXYPORT,          $args->{proxyport} // 8080 );
-        $curl->setopt( CURLOPT_PROXYTYPE,          (($args->{proxyscheme}//'http') eq 'http')?1:($args->{proxyscheme} eq 'https'?2:0));
-        if(defined $args->{proxyuser} && defined $args->{proxypassword}){
-            my $proxy_auth = $args->{proxy_auth} // "$args->{proxyuser}:$args->{proxypassword}";
-            $curl->setopt( CURLOPT_PROXYUSERPWD,  $proxy_auth );
-            if($args->{proxy_auth_type}){
-                my $proxy_auth_type   = CURLAUTH_NONE;
-                $proxy_auth_type += CURLAUTH_BASIC  if $args->{proxy_auth_type} =~ /basic/i;
-                $proxy_auth_type += CURLAUTH_DIGEST if $args->{proxy_auth_type} =~ /digest/i;
-                $proxy_auth_type += CURLAUTH_NTLM   if $args->{proxy_auth_type} =~ /ntlm/i;
-                $proxy_auth_type  = CURLAUTH_ANY    if $args->{proxy_auth_type} =~ /any/i;
-
-                $curl->setopt( CURLOPT_PROXYAUTH, $proxy_auth_type );
-            }
-        }
-    }
-
-    $curl->setopt( CURLOPT_TRANSFER_ENCODING,      0                           );
-    $curl->setopt( CURLOPT_SSL_VERIFYPEER,         (($args->{httpsverify}//0x0) & 0x01) );
-    $curl->setopt( CURLOPT_SSL_VERIFYHOST,         (($args->{httpsverify}//0x0) & 0x02) );
-    $curl->setopt( CURLOPT_SSL_SESSIONID_CACHE,    0                      );
-    $curl->setopt( CURLOPT_CAPATH,                 $args->{ca_path}       ) if $args->{ca_path};
-    $curl->setopt( CURLOPT_SSLKEYPASSWD,           $args->{ssl_pass}      ) if $args->{ssl_pass};
-    $curl->setopt( CURLOPT_CAINFO,                 $args->{ca_cert}       ) if $args->{ca_cert}  && -f $args->{ca_cert};
-    $curl->setopt( CURLOPT_SSLCERT,                $args->{pem_cert}      ) if $args->{pem_cert} && -f $args->{pem_cert};
-    $curl->setopt( CURLOPT_SSLVERSION,             $args->{ssl_ver}       ) if $args->{ssl_ver};
-    $curl->setopt( CURLOPT_NOSIGNAL,               1                      ) if $args->{nosignal};
-    $curl->setopt( CURLOPT_HEADERFUNCTION,         \&_header_callback     );
-    $curl->setopt( CURLOPT_VERBOSE,                1                      ) if $args->{verbose};
-    $curl->setopt( CURLOPT_PRIVATE,                $args->{http_req_id}   ) if defined $args->{http_req_id};
-
-    return $curl;
-}
-
-sub _header_callback {
-    my ($chunk, $header_data) = @_;
-    $$header_data .= $chunk;
-    return length($chunk);
-}
-
-sub _reader_callback {
-    my ($sz, $scratch_state) = @_;
-    return '' if $scratch_state->[1] >= $scratch_state->[2];
-    my $chunk = substr(${$scratch_state->[0]}, $scratch_state->[1], $sz);
-    $scratch_state->[1] += length($chunk);
-    return $chunk;
-}
-
-sub _writer_callback {
-    my ($chunk, $userdata_ref) = @_;
-    $$userdata_ref .= $chunk;
-    return length($chunk);
+    return $response;
 }
 
 package Util::ASYNC;

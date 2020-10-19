@@ -5,6 +5,7 @@ YUM_BASE           ?= 8
 YUM_URL            ?= file:///
 GPG_URL            ?= file:///
 TMPDIR             ?= /tmp/tmp_$(USER)
+CI_COMMIT_REF_SLUG ?= latest
 
 all: perl_docker
 

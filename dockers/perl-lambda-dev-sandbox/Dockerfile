@@ -43,6 +43,8 @@ RUN find /opt/lib/perl5/ -type f -name '.packlist'|xargs rm
 RUN find /opt/lib/perl5/ -type f -name '*.pod'    |xargs rm
 RUN find /opt/lib/perl5/ -type f -name '*.h'      |xargs rm
 RUN rm -rf /opt/tmp
+RUN rm -rf /opt/cpan_config.pl
+RUN rm -rf /opt/scripts
 
 # docker specific, won't be used for the lambda zip
 ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/5.32.0/x86_64/CORE

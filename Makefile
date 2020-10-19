@@ -5,7 +5,6 @@ YUM_BASE           ?= 8
 YUM_URL            ?= file:///
 GPG_URL            ?= file:///
 TMPDIR             ?= /tmp/tmp_$(USER)
-CI_COMMIT_REF_SLUG ?= latest
 
 all: perl_docker
 
@@ -18,8 +17,6 @@ aws_lambda_perl_runtime: perl_docker docker_prune clean mkdist copy_bootstrap do
 deploy: aws_lambda_perl_runtime publish_aws_lambda_layer_runtime_zip_terraform
 
 build_docker.%:
-		# Pull by commit ref slug so we get the latest on this branch
-		docker pull $*:$(CI_COMMIT_REF_SLUG) || true
 		docker build \
 			./dockers/$* \
 			-f ./dockers/$*/Dockerfile \

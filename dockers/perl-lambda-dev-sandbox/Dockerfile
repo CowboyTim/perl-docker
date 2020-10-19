@@ -38,6 +38,17 @@ RUN INSTALL_BASE=/opt /opt/lib64/ld-2.28.so /opt/bin/perl /opt/bin/cpan -j /opt/
 RUN INSTALL_BASE=/opt /opt/lib64/ld-2.28.so /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti JSON::XS
 RUN INSTALL_BASE=/opt /opt/lib64/ld-2.28.so /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti POSIX::strptime
 
+# things we never will need for an AWS Lambda (or, if needed, can be adde. for
+# instance to make a cpan build system with lambda .. or so)
+RUN rm -rf /opt/lib/perl5/*/CPAN
+RUN rm -rf /opt/lib/perl5/*/ExtUtils
+RUN rm -rf /opt/lib/perl5/*/Pod
+RUN rm -rf /opt/lib/perl5/*/TAP
+
+# unicode/unicore
+RUN rm -rf /opt/lib/perl5/*/unicore
+RUN rm -rf /opt/lib/perl5/*/Unicode/Collate
+
 # cleanup now
 RUN find /opt/lib/perl5/ -type f -name '.packlist'|xargs rm
 RUN find /opt/lib/perl5/ -type f -name '*.pod'    |xargs rm

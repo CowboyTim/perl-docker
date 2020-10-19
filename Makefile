@@ -12,7 +12,7 @@ all: perl_docker
 
 perl_docker: build_docker.base-sandbox build_docker.stage-sandbox build_docker.perl-sandbox
 
-aws_lambda_perl_runtime: perl_docker docker_prune clean mkdist copy_bootstrap docker_save.perl-sandbox aws_lambda_layer_runtime_zip
+aws_lambda_perl_runtime: aws_lambda_layer_runtime_zip
 
 deploy: aws_lambda_perl_runtime publish_aws_lambda_layer_runtime_zip
 

@@ -21,20 +21,22 @@ ENV PERL5LIB=\
 /opt/lib/perl5/vendor_perl:\
 /opt/lib/perl5/auto:\
 /opt/lib/perl5/vendor_perl/auto:\
-/opt/lib/perl5/x86_64-linux-thread-multi:\
-/opt/lib/perl5/x86_64-linux-thread-multi/auto\
+/opt/lib/perl5/x86_64:\
+/opt/lib/perl5/x86_64/auto:\
 /opt/lib64/perl5:\
 /opt/lib64/perl5/vendor_perl:\
 /opt/lib64/perl5/auto:\
 /opt/lib64/perl5/vendor_perl/auto:\
-/opt/lib64/perl5/x86_64-linux-thread-multi:\
-/opt/lib64/perl5/x86_64-linux-thread-multi/auto
+/opt/lib64/perl5/x86_64:\
+/opt/lib64/perl5/x86_64/auto:\
+/opt/tmp/cpan_local/lib/perl5:\
+/opt/tmp/cpan_local/lib/perl5/x86_64:\
+/opt/tmp/cpan_local/lib/perl5/x86_64/auto
 
 # install perl extra cpan's
-RUN INSTALL_BASE=/opt /opt/bin/cpan -j /opt/cpan_config.pl -Ti Storable
-RUN INSTALL_BASE=/opt /opt/bin/cpan -j /opt/cpan_config.pl -Ti JSON::XS
-RUN INSTALL_BASE=/opt /opt/bin/cpan -j /opt/cpan_config.pl -Ti Module::Build
-RUN INSTALL_BASE=/opt /opt/bin/cpan -j /opt/cpan_config.pl -Ti AWS::Signature4
+RUN INSTALL_BASE=/opt /opt/lib64/ld-2.28.so /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti Storable
+RUN INSTALL_BASE=/opt /opt/lib64/ld-2.28.so /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti JSON::XS
+RUN INSTALL_BASE=/opt /opt/lib64/ld-2.28.so /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti POSIX::strptime
 
 # cleanup now
 RUN find /opt/lib/perl5/ -type f -name '.packlist'|xargs rm

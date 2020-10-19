@@ -27,25 +27,42 @@ WORKDIR /
 
 RUN cp /busybox /opt/busybox
 
+ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/5.32.0/x86_64/CORE
+ENV PERL5LIB=\
+/opt/lib/perl5:\
+/opt/lib/perl5/vendor_perl:\
+/opt/lib/perl5/auto:\
+/opt/lib/perl5/vendor_perl/auto:\
+/opt/lib/perl5/x86_64:\
+/opt/lib/perl5/x86_64/auto:\
+/opt/lib64/perl5:\
+/opt/lib64/perl5/vendor_perl:\
+/opt/lib64/perl5/auto:\
+/opt/lib64/perl5/vendor_perl/auto:\
+/opt/lib64/perl5/x86_64:\
+/opt/lib64/perl5/x86_64/auto:\
+/opt/tmp/cpan_local/lib/perl5:\
+/opt/tmp/cpan_local/lib/perl5/x86_64:\
+/opt/tmp/cpan_local/lib/perl5/x86_64/auto
+
 # install CPAN modules for CPAN in /opt/tmp/cpan_local. This is handled by cpan_config.pl
 COPY cpan_config.pl /opt
-RUN /opt/bin/cpan -j /opt/cpan_config.pl -Ti \
-    ExtUtils::PkgConfig \
-    CPAN
-RUN /opt/bin/cpan -j /opt/cpan_config.pl -Ti \
-    HTTP::Date \
-    HTML::Tiny \
-    install
-RUN /opt/bin/cpan -j /opt/cpan_config.pl -Ti \
-    Canary::Stability
-RUN /opt/bin/cpan -j /opt/cpan_config.pl -Ti \
-    Algorithm::Diff
-RUN /opt/bin/cpan -j /opt/cpan_config.pl -Ti \
-    Spiffy
-RUN /opt/bin/cpan -j /opt/cpan_config.pl -Ti \
-    Text::Diff
-RUN /opt/bin/cpan -j /opt/cpan_config.pl -Ti \
-    Test::Base
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  ExtUtils::PkgConfig
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  ExtUtils::Helpers
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  CPAN
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  HTTP::Date
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  HTML::Tiny
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  install
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Canary::Stability
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Algorithm::Diff
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Spiffy
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Text::Diff
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Base
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Deep
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::LeakTrace
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  inc::latest
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Module::Build
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  common::sense
 
 # cleanup stuff in /opt we never will need
 RUN rm -rf /opt/src

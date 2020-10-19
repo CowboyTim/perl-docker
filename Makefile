@@ -6,9 +6,9 @@ YUM_URL            ?= file:///
 GPG_URL            ?= file:///
 TMPDIR             ?= /tmp/tmp_$(USER)
 
-all: publish_new_runtime
+all: perl_docker
 
-.PHONY: publish_new_runtime
+.PHONY: perl_docker
 
 perl_docker: build_docker.base-sandbox build_docker.stage-sandbox build_docker.perl-sandbox
 

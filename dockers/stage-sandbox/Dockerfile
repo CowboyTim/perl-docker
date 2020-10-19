@@ -12,15 +12,16 @@ RUN \
        curl -sSL -k --insecure https://www.cpan.org/src/5.0/perl-5.32.0.tar.xz -o perl-5.32.0.tar.xz \
     && echo '6f436b447cf56d22464f980fac1916e707a040e96d52172984c5d184c09b859b *perl-5.32.0.tar.xz' | sha256sum -c - \
     && tar --strip-components=1 -xaf perl-5.32.0.tar.xz -C /opt/src/perl \
-    && rm perl-5.32.0.tar.xz \
-    && ./Configure           \
-        -Duse64bitall        \
-        -Darchname=x86_64    \
-        -Duseshrplib         \
-        -Dprefix=/opt/       \
-        -Duselargefiles      \
-        -des                 \
-    && make -j8              \
+    && rm perl-5.32.0.tar.xz                                             \
+    && ./Configure                                                       \
+        -Duse64bitall                                                    \
+        -Darchname=x86_64                                                \
+        -Duseshrplib                                                     \
+        -Dprefix=/opt/                                                   \
+        -Duselargefiles                                                  \
+        -Dldflags='-Wl,-R/opt/lib -Wl,-R/opt/lib64'                      \
+        -des                                                             \
+    && make -j16                                                         \
     && make install
 
 WORKDIR /

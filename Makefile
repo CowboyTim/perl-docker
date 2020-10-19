@@ -14,7 +14,7 @@ perl_docker: build_docker.base-sandbox build_docker.stage-sandbox build_docker.p
 
 aws_lambda_perl_runtime: perl_docker docker_prune clean mkdist copy_bootstrap docker_save.perl-sandbox aws_lambda_layer_runtime_zip
 
-deploy: aws_lambda_perl_runtime publish_aws_lambda_layer_runtime_zip_terraform
+deploy: aws_lambda_perl_runtime publish_aws_lambda_layer_runtime_zip
 
 build_docker.%:
 		docker build \
@@ -48,10 +48,7 @@ publish_aws_lambda_layer_runtime_zip:
                                 --description 'This is the PERL Lambda runtime' \
                                 --zip-file fileb://$(TMPDIR)/dist/perl-lambda-runtime.zip
 
-publish_aws_lambda_layer_runtime_zip_terraform:
-		cd tf && terraform init && terraform apply -input=false -auto-approve -var="perl_lambda_runtime_zip=$(TMPDIR)/dist/perl-lambda-runtime.zip"
-
-publish_new_runtime: clean mkdist copy_bootstrap docker_save.perl-sandbox aws_lambda_layer_runtime_zip publish_aws_lambda_layer_runtime_zip_terraform
+publish_new_runtime: clean mkdist copy_bootstrap docker_save.perl-sandbox aws_lambda_layer_runtime_zip publish_aws_lambda_layer_runtime_zip
 
 copy_bootstrap:
 		cp dockers/perl-lambda/bootstrap.lambda.pl dockers/perl-lambda/bootstrap $(TMPDIR)/tmpdist/ && chmod +x $(TMPDIR)/tmpdist/bootstrap*

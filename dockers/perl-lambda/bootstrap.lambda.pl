@@ -6,20 +6,20 @@ unless($ENV{_HANDLER}){
     die "This is the AWS Lambda PERL runtime, _HANDLER ENV is not set\n";
 }
 
-$ENV{LAMBDA_TASK_ROOT}             ||= '';
+$ENV{LAMBDA_TASK_ROOT}             = '' unless length($ENV{LAMBDA_TASK_ROOT}//'');
 
 # for when we just want to execute a script
-$ENV{SCRIPT_EXEC}                  ||= 0;
+$ENV{SCRIPT_EXEC}                  = 0  unless length($ENV{SCRIPT_EXEC}//'');
 # default in process libcurl (as opposed to `` fork/exec of curl)
-$ENV{USE_HTTPMETHOD}               ||= 1;
+$ENV{USE_HTTPMETHOD}               = 1  unless length($ENV{USE_HTTPMETHOD}//'');
 # always clean up /tmp (it's small, and we want to sandbox as much as possible INVARIANT)
-$ENV{INVARIANT_TMP}                ||= 1;
+$ENV{INVARIANT_TMP}                = 1  unless length($ENV{INVARIANT_TMP}//'');
 # default print output
-$ENV{PRINT_LOG}                    ||= 1;
+$ENV{PRINT_LOG}                    = 1  unless length($ENV{PRINT_LOG}//'');
 # default namespace the script
-$ENV{SCRIPT_NAMESPACE}             ||= 0;
+$ENV{SCRIPT_NAMESPACE}             = 0  unless length($ENV{SCRIPT_NAMESPACE}//'');
 # debugging style of logging
-$ENV{DEBUG}                        ||= 1;
+$ENV{DEBUG}                        = 1  unless length($ENV{DEBUG}//'');
 
 # FH  buffering
 my $oldfh = select STDOUT;
@@ -38,12 +38,17 @@ infinite_loop("$ENV{_HANDLER} [${pkg_name}::".($perl_method//'')."] for");
 exit 0;
 
 sub init_handler {
+    p_log("init ENV ".join(',', (map {"$_=".($ENV{$_}//'')} qw(USE_HTTPMETHOD INVARIANT_TMP PRINT_LOG SCRIPT_EXEC SCRIPT_NAMESPACE DEBUG))));
+    p_log("preloading _HANDLER=$ENV{_HANDLER}\n")
+        if $ENV{DEBUG};
     # load handler, use another namespace to do this in
     my ($perl_snippet, $perl_method, @rest) = split m/\./, $ENV{_HANDLER};
     my $pkg_name = $perl_snippet =~ s/\W/_/gr;
     return ($perl_snippet, undef) unless length($perl_method//'');
     eval {
         my $handler_script = "$ENV{LAMBDA_TASK_ROOT}/$perl_snippet.pl";
+        p_log("preloading $handler_script\n")
+            if $ENV{DEBUG};
         if($ENV{SCRIPT_NAMESPACE}){
             eval "package $pkg_name {
                 do('$handler_script') // do {
@@ -89,17 +94,17 @@ sub infinite_loop {
     local $SIG{TERM} = $s_handler;
     local @ARGV = ();
     while($loop){
-        p_log("ENV ".join(',', (map {"$_=".($ENV{$_}//'')} qw(USE_HTTPMETHOD INVARIANT_TMP PRINT_LOG SCRIPT_EXEC SCRIPT_NAMESPACE))));
         # fetch a new lambda invocation
         my ($event_data, $invocation_id) = fetch_new();
-        my $s_abbr = "$info_abbr [$invocation_id]";
-        p_log($s_abbr);
+        p_log("ENV ".join(',', (map {"$_=".($ENV{$_}//'')} qw(USE_HTTPMETHOD INVARIANT_TMP PRINT_LOG SCRIPT_EXEC SCRIPT_NAMESPACE DEBUG))))
+            if $ENV{DEBUG};
+        p_log("processing $info_abbr [$invocation_id] start");
 
         # first process the request
         my ($response_t, $handle_request_data) = process_request($invocation_id, $event_data);
 
         # post response
-        p_log("$s_abbr $response_t");
+        p_log("processing $info_abbr [$invocation_id] ended: $response_t");
         post_response($invocation_id, $response_t, $handle_request_data);
     }
     return;
@@ -170,7 +175,7 @@ sub process_request {
                 ($response_t, $handle_request_data) = _lambda_execute($pkg_name, $perl_method, $input_data);
             }
 
-            p_log("result: response:'".($response_t//'<no response>')."', data:'".($handle_request_data//'<no data>')."' [$invocation_id]\n")
+            p_log("execution result, response:".($response_t//'<no response>').", data:".($handle_request_data//'<no data>')." [$invocation_id]\n")
                 if $ENV{DEBUG};
 
             # set back STDOUT and STDIN
@@ -214,7 +219,7 @@ sub process_request {
         };
         $response_t          //= 'response';
         $exit_value_wanted   //= 0; # fake an "exit 0" if it wasn't done yet
-        p_log("stdout capture:'$response_t', data:'$handle_request_data',exit:'$exit_value_wanted' [$invocation_id]\n")
+        p_log("execution result stdout capture:$response_t, data:$handle_request_data,exit:$exit_value_wanted [$invocation_id]\n")
             if $ENV{DEBUG};
 
         # chdir LAMBDA_TASK_ROOT
@@ -328,7 +333,7 @@ sub post_response {
 
 # NOTE: /tmp dir usage is limited to 512MB (see https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html)
 sub cleantmp {
-    return unless $ENV{INVARIANT_TMP}||1;
+    return unless $ENV{INVARIANT_TMP};
     eval {
         cpan_load('File::Path');
         chdir($ENV{LAMBDA_TASK_ROOT})
@@ -353,7 +358,7 @@ sub cpan_load {
 
 sub p_log {
     my (@msg) = @_;
-    return unless ($ENV{PRINT_LOG}||1);
+    return unless $ENV{PRINT_LOG};
     my $msg = "LOG [$$] ".join('', map {$_//''} @msg);
     chomp($msg);
     chomp($msg);

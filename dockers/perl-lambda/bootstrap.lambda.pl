@@ -372,7 +372,7 @@ sub p_log {
 
 sub http_do {
     my ($http_method, $url, $request_body) = @_;
-    my $response = cpan_load("HTTP::Tiny")->new()->request($http_method, $url, (defined $request_body?{contents => $request_body}:()));
+    my $response = cpan_load("HTTP::Tiny")->new()->request($http_method, $url, (defined $request_body?{content => $request_body}:()));
     if(!$response or !$response->{success}){
         die "http error: ".($response->{status}//'<no http code>').": ".($response->{reason}||$response->{content})."\n";
     }

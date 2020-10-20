@@ -18,6 +18,8 @@ $ENV{INVARIANT_TMP}                ||= 1;
 $ENV{PRINT_LOG}                    ||= 1;
 # default namespace the script
 $ENV{SCRIPT_NAMESPACE}             ||= 0;
+# debugging style of logging
+$ENV{DEBUG}                        ||= 1;
 
 # FH  buffering
 my $oldfh = select STDOUT;
@@ -159,15 +161,26 @@ sub process_request {
                 open(STDERR, ">&", $olderr)  or die "Can't dup back STDERR: $!\n";
                 open(STDIN,  "<&", $oldin)   or die "Can't dup back STDIN: $!\n";
                 local ($?, $!, $@);
+                my $e_err;
                 if($ENV{SCRIPT_NAMESPACE}){
+                    p_log("executing in $ENV{_HANDLER} in $pkg_name, SCRIPT_NAMESPACE=$ENV{SCRIPT_NAMESPACE} for [$invocation_id]\n")
+                        if $ENV{DEBUG};
                     ($response_t, $handle_request_data) = eval "package $pkg_name {$perl_method(\$input_data //= '', \$lambda_context)}";
+                    $e_err = $@;
+                    p_log("result: ".($response_t//'no response').",".($handle_request_data//'no data')." [$invocation_id]\n")
+                        if $ENV{DEBUG};
                 } else {
+                    p_log("executing in $ENV{_HANDLER} in main, SCRIPT_NAMESPACE=$ENV{SCRIPT_NAMESPACE} for [$invocation_id]\n")
+                        if $ENV{DEBUG};
                     no strict 'refs';
                     ($response_t, $handle_request_data) = eval {&$perl_method($input_data //= '', $lambda_context)};
+                    $e_err = $@;
+                    p_log("result: ".($response_t//'no response').",".($handle_request_data//'no data')." [$invocation_id]\n")
+                        if $ENV{DEBUG};
                 }
-                if($@){
-                    chomp(my $err = $@);
-                    die "$err\n";
+                if($e_err){
+                    chomp($e_err);
+                    die "$e_err\n";
                 }
                 if(!defined $handle_request_data and length($response_t//'') and $response_t !~ m/^(response|error)$/){
                     $handle_request_data = $response_t;

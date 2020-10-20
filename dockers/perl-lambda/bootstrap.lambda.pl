@@ -1,12 +1,10 @@
 #!/opt/bin/perl
 
 # check a few things, default, sanity
-use strict; use warnings;
+use strict;
 unless($ENV{_HANDLER}){
     die "This is the AWS Lambda PERL runtime, _HANDLER ENV is not set\n";
 }
-
-use Fcntl qw(FD_CLOEXEC F_GETFL F_SETFL);
 
 $ENV{LAMBDA_TASK_ROOT}             ||= '';
 
@@ -178,12 +176,15 @@ sub process_request {
             } else {
                 if($ENV{SCRIPT_EXEC}){
                     Util::ASYNC::execute_async(\$m_proc_state, 1, "[$$] $invocation_id process forked", sub {
-                        my $handler_script = "$ENV{LAMBDA_TASK_ROOT}/$pkg_name";
-                        # make sure stdin, stdout and stderr aren't closed on exec
+                        # FIXME: probably not needed: make sure stdin, stdout and stderr aren't closed on exec
+                        cpan_load('Fcntl');
                         for (*STDIN, *STDOUT, *STDERR){
-                            my $fl = fcntl($_, F_GETFL, 0)        or p_log("problem F_GETFL on FD=".fileno($_).": $!");
-                            fcntl($_, F_SETFL, $fl & ~FD_CLOEXEC) or p_log("problem F_SETFL on FD=".fileno($_).": $!");
+                            my $fl = fcntl($_, Fcntl::F_GETFL(), 0)
+                                or p_log("problem F_GETFL on FD=".fileno($_).": $!");
+                            fcntl($_, Fcntl::F_SETFL(), $fl & ~Fcntl::FD_CLOEXEC())
+                                or p_log("problem F_SETFL on FD=".fileno($_).": $!");
                         }
+                        my $handler_script = "$ENV{LAMBDA_TASK_ROOT}/$pkg_name";
                         exec $handler_script or die "Error exec $handler_script: $!\n";
                     },
                     sub {
@@ -371,16 +372,7 @@ sub http_do {
 
 package Util::ASYNC;
 
-use strict; use warnings;
-use base qw(Exporter);
-
-our @EXPORT_OK = qw(
-    execute_async
-    wait_for_all_async_jobs
-    collect_jobs
-    real_exit
-);
-
+use strict;
 use POSIX qw(:sys_wait_h sigprocmask SIG_BLOCK SIG_UNBLOCK SIGCHLD SIGINT SIGTERM SIGHUP SIGQUIT);
 
 sub execute_async {

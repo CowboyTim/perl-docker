@@ -29,9 +29,6 @@ $oldfh = select STDERR;
 local $|=1;
 select $oldfh;
 
-# multi processes state (if needed)
-my $m_proc_state;
-
 # init the handler
 my ($pkg_name, $perl_method) = init_handler();
 
@@ -112,10 +109,9 @@ sub process_request {
     my ($invocation_id, $input_data) = @_;
 
     # now execute what was requested
-    my $lambda_context = {};
     my ($response_t, $handle_request_data);
     my $exit_value_wanted;
-    my ($oldout, $olderr, $oldin);
+    my ($oldout, $oldin);
     eval {
         # clean /tmp
         cleantmp();
@@ -124,9 +120,8 @@ sub process_request {
         chdir($ENV{LAMBDA_TASK_ROOT})
             or die "Error chdir to LAMBDA_TASK_ROOT path=$ENV{LAMBDA_TASK_ROOT}: $!\n";
 
-        # save STDOUT, STDERR and STDIN
+        # save STDOUT and STDIN, STDERR will go to lambda catch
         open($oldout, ">&STDOUT") or die "Can't dup STDOUT: $!\n";
-        open($olderr, ">&STDERR") or die "Can't dup STDERR: $!\n";
         open($oldin,  "<&STDIN")  or die "Can't dup STDIN: $!\n";
 
         # fake stdout
@@ -145,106 +140,56 @@ sub process_request {
 
         # process/run
         eval {
-            if(defined $perl_method){
-                # localize an exit to be a fake die + keep what exit code was requested
-                no warnings 'once';
-                local *CORE::GLOBAL::exit = sub {
-                    $exit_value_wanted = $_[0]//0;
-                    if($exit_value_wanted != 0){
-                        die "exit called with exit_value=$exit_value_wanted, at ".join(':', (caller(1))[0,3,6])."\n";
-                    }
-                };
 
-                # pkg_name is the script itself now, as we don't have a perl_method
-                # set back STDOUT, STDERR and STDIN
-                open(STDOUT, ">&", $oldout)  or die "Can't dup back STDOUT: $!\n";
-                open(STDERR, ">&", $olderr)  or die "Can't dup back STDERR: $!\n";
-                open(STDIN,  "<&", $oldin)   or die "Can't dup back STDIN: $!\n";
-                local ($?, $!, $@);
-                my $e_err;
-                p_log("executing in $ENV{_HANDLER} in namespace:".($pkg_name//'main').", SCRIPT_NAMESPACE=$ENV{SCRIPT_NAMESPACE} for [$invocation_id]\n")
-                    if $ENV{DEBUG};
-                if($ENV{SCRIPT_NAMESPACE}){
-                    ($response_t, $handle_request_data) = eval "package $pkg_name {$perl_method(\$input_data //= '', \$lambda_context)}";
-                    $e_err = $@;
-                } else {
-                    no strict 'refs';
-                    ($response_t, $handle_request_data) = eval {&$perl_method($input_data //= '', $lambda_context)};
-                    $e_err = $@;
+            p_log("executing in $ENV{_HANDLER} in namespace:".($pkg_name//'main').", SCRIPT_NAMESPACE=$ENV{SCRIPT_NAMESPACE}, SCRIPT_EXEC=$ENV{SCRIPT_EXEC} for [$invocation_id]\n")
+                if $ENV{DEBUG};
+
+            # localize an exit to be a fake die + keep what exit code was requested
+            no warnings 'once';
+            local *CORE::GLOBAL::exit = sub {
+                $exit_value_wanted = $_[0]//0;
+                if($exit_value_wanted != 0){
+                    die "exit called with exit_value=$exit_value_wanted, at ".join(':', (caller(1))[0,3,6])."\n";
                 }
-                p_log("result: response:'".($response_t//'<no response>')."', data:'".($handle_request_data//'<no data>')."' [$invocation_id]\n")
-                    if $ENV{DEBUG};
-                if($e_err){
-                    chomp($e_err);
-                    die "$e_err\n";
-                }
-                if(!defined $handle_request_data and length($response_t//'') and $response_t !~ m/^(response|error)$/){
-                    $handle_request_data = $response_t;
-                    $response_t          = 'response';
-                }
+            };
+
+            if($ENV{SCRIPT_EXEC}){
+                Util::ASYNC::execute_async(\my $m_proc_state, 1, "[$$] $invocation_id process forked", 
+                sub {
+                    ($response_t, $handle_request_data) = _lambda_execute($pkg_name, $perl_method, $input_data);
+                },
+                sub {
+                    my ($_me, $pid, $exit_v, $signal_v) = @_;
+                    die "$_me exited with: exit_value=$exit_v,signal_value=$signal_v\n" if $signal_v or $exit_v;
+                    $response_t        //= 'response';
+                    $exit_value_wanted //= 0;
+                    return;
+                });
+                Util::ASYNC::wait_for_all_async_jobs(\$m_proc_state);
             } else {
-                if($ENV{SCRIPT_EXEC}){
-                    Util::ASYNC::execute_async(\$m_proc_state, 1, "[$$] $invocation_id process forked", sub {
-                        # FIXME: probably not needed: make sure stdin, stdout and stderr aren't closed on exec
-                        cpan_load('Fcntl');
-                        for (*STDIN, *STDOUT, *STDERR){
-                            my $fl = fcntl($_, Fcntl::F_GETFL(), 0)
-                                or p_log("problem F_GETFL on FD=".fileno($_).": $!");
-                            fcntl($_, Fcntl::F_SETFL(), $fl & ~Fcntl::FD_CLOEXEC())
-                                or p_log("problem F_SETFL on FD=".fileno($_).": $!");
-                        }
-                        my $handler_script = "$ENV{LAMBDA_TASK_ROOT}/$pkg_name";
-                        exec $handler_script or die "Error exec $handler_script: $!\n";
-                    },
-                    sub {
-                        my ($_me, $pid, $exit_v, $signal_v) = @_;
-                        die "$_me exited with: exit_value=$exit_v,signal_value=$signal_v\n" if $signal_v or $exit_v;
-                        $response_t        //= 'response';
-                        $exit_value_wanted //= 0;
-                        return;
-                    });
-                    Util::ASYNC::wait_for_all_async_jobs(\$m_proc_state);
-                } else {
-                    # localize an exit to be a fake die + keep what exit code was requested
-                    no warnings 'once';
-                    local *CORE::GLOBAL::exit = sub {
-                        $exit_value_wanted = $_[0]//0;
-                        if($exit_value_wanted != 0){
-                            die "exit called with exit_value=$exit_value_wanted, at ".join(':', (caller(1))[0,3,6])."\n";
-                        }
-                    };
-                    local ($?, $!, $@);
-                    my $handler_script = "$ENV{LAMBDA_TASK_ROOT}/$pkg_name.pl";
-                    do($handler_script) // do {
-                        die "problem loading handler script $handler_script: $!\n"   if $!;
-                        die "problem compiling handler script $handler_script: $@\n" if $@;
-                    };
-                }
+                ($response_t, $handle_request_data) = _lambda_execute($pkg_name, $perl_method, $input_data);
             }
 
-            # set back STDOUT, STDERR and STDIN
-            open(STDOUT, ">&", $oldout)  or die "Can't dup back STDOUT: $!\n";
-            open(STDERR, ">&", $olderr)  or die "Can't dup back STDERR: $!\n";
-            open(STDIN,  "<&", $oldin)   or die "Can't dup back STDIN: $!\n";
+            p_log("result: response:'".($response_t//'<no response>')."', data:'".($handle_request_data//'<no data>')."' [$invocation_id]\n")
+                if $ENV{DEBUG};
 
-            # fake an "exit 0" if it wasn't done yet
+            # set back STDOUT and STDIN
             close($fake_in_fh);
             close($fake_out_fh) or die "Error closing tmp $tmp_out_fn: $!\n";
+            open(STDOUT, ">&", $oldout)  or die "Can't dup back STDOUT: $!\n";
+            open(STDIN,  "<&", $oldin)   or die "Can't dup back STDIN: $!\n";
 
-            # we don't have a returned handler data, but we do check for stdout
-            $handle_request_data //= do {
-                open(my $fake_out_fh_in, "<", $tmp_out_fn)
-                    or die "Error opening $tmp_out_fn for re-read (stdout): $!\n";
-                local $/;
-                <$fake_out_fh_in>;
-            };
-            p_log("stdout capture:'".($response_t//'<no response>')."', data:'".($handle_request_data//'<no data>')."' [$invocation_id]\n")
-                if $ENV{DEBUG};
-            $response_t          //= 'response';
-            $exit_value_wanted   //= 0;
         };
         if($@){
             chomp(my $err = $@);
+
+            # set back STDOUT and STDIN
+            close($fake_in_fh);
+            close($fake_out_fh) or die "Error closing tmp $tmp_out_fn: $!\n";
+            open(STDOUT, ">&", $oldout)  or die "Can't dup back STDOUT: $!\n";
+            open(STDIN,  "<&", $oldin)   or die "Can't dup back STDIN: $!\n";
+
+            # log the error
             $err = "problem executing $ENV{_HANDLER} for [$invocation_id]: $err\n";
             p_log($err);
             # was exit requested and 0? If NOT: make an error response
@@ -260,10 +205,17 @@ sub process_request {
             }
         }
 
-        # set back STDOUT, STDERR and STDIN
-        open(STDOUT, ">&", $oldout)  or die "Can't dup back STDOUT: $!\n";
-        open(STDERR, ">&", $olderr)  or die "Can't dup back STDERR: $!\n";
-        open(STDIN,  "<&", $oldin)   or die "Can't dup back STDIN: $!\n";
+        # we don't have a returned handler data, but we do check for stdout
+        $handle_request_data //= do {
+            open(my $fake_out_fh_in, "<", $tmp_out_fn)
+                or die "Error opening $tmp_out_fn for re-read (stdout): $!\n";
+            local $/;
+            <$fake_out_fh_in>;
+        };
+        $response_t          //= 'response';
+        $exit_value_wanted   //= 0; # fake an "exit 0" if it wasn't done yet
+        p_log("stdout capture:'$response_t', data:'$handle_request_data',exit:'$exit_value_wanted' [$invocation_id]\n")
+            if $ENV{DEBUG};
 
         # chdir LAMBDA_TASK_ROOT
         chdir($ENV{LAMBDA_TASK_ROOT})
@@ -276,7 +228,6 @@ sub process_request {
         chomp(my $err = $@);
         eval {
             open(STDOUT, ">&", $oldout)  or die "Can't dup back STDOUT: $!\n";
-            open(STDERR, ">&", $olderr)  or die "Can't dup back STDERR: $!\n";
             open(STDIN,  "<&", $oldin)   or die "Can't dup back STDIN: $!\n";
         };
         p_log("problem setting FD=1,2,3 back: $@") if $@;
@@ -292,6 +243,42 @@ sub process_request {
     }
     $response_t          //= 'response';
     $handle_request_data //= '';
+    return ($response_t, $handle_request_data);
+}
+
+sub _lambda_execute {
+    my ($pkg_name, $perl_method, $input_data) = @_;
+    my ($response_t, $handle_request_data);
+    if(defined $perl_method){
+        local ($?, $!, $@);
+        if($ENV{SCRIPT_NAMESPACE}){
+            ($response_t, $handle_request_data) = eval "package $pkg_name {$perl_method(\$input_data //= '')}";
+        } else {
+            no strict 'refs';
+            ($response_t, $handle_request_data) = eval {&$perl_method($input_data //= '')};
+        }
+        if($@){
+            chomp(my $err = $@);
+            die "$err\n";
+        }
+        if(!defined $handle_request_data and length($response_t//'') and $response_t !~ m/^(response|error)$/){
+            $handle_request_data = $response_t;
+            $response_t          = 'response';
+        }
+    } else {
+        if($ENV{SCRIPT_EXEC}){
+            # exec the handler, as it's a separate script
+            my $handler_script = "$ENV{LAMBDA_TASK_ROOT}/$pkg_name";
+            exec $handler_script or die "Error exec $handler_script: $!\n";
+        } else {
+            local ($?, $!, $@);
+            my $handler_script = "$ENV{LAMBDA_TASK_ROOT}/$pkg_name.pl";
+            do($handler_script) // do {
+                die "problem loading handler script $handler_script: $!\n"   if $!;
+                die "problem compiling handler script $handler_script: $@\n" if $@;
+            };
+        }
+    }
     return ($response_t, $handle_request_data);
 }
 
@@ -370,7 +357,7 @@ sub p_log {
     my $msg = "LOG [$$] ".join('', map {$_//''} @msg);
     chomp($msg);
     chomp($msg);
-    return print "$msg\n";
+    return print STDERR "$msg\n";
 }
 
 sub http_do {

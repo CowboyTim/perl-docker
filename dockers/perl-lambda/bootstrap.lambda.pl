@@ -52,10 +52,10 @@ sub init_handler {
         if($ENV{SCRIPT_NAMESPACE}){
             eval "package $pkg_name {
                 do('$handler_script') // do {
-                    die \"problem loading handler script $handler_script: \$!\n\"   if \$!;
-                    die \"problem compiling handler script $handler_script: \$@\n\" if \$@;
+                    die \"problem loading handler script $handler_script: \$!\\n\"   if \$!;
+                    die \"problem compiling handler script $handler_script: \$@\\n\" if \$@;
                 }
-            }}";
+            }";
             die $@ if $@;
         } else {
             do($handler_script) // do {
@@ -65,20 +65,29 @@ sub init_handler {
         }
     };
     if($@){
-        # FIXME: improve/fix/test/implement this check
-        my $handle_request_data = "{\"errorMessage\" : \"Failed to load function $ENV{_HANDLER}: $@\", \"errorType\" : \"InvalidFunctionException\"}";
+        chomp(my $err = $@);
+        my $err_post_data = eval {
+            cpan_load("JSON::XS");
+            return JSON::XS::encode_json({
+                errorMessage => "Failed to load function $ENV{_HANDLER}: $err",
+                errorType    => "InvalidFunctionException"
+            });
+        };
+        p_log($@) if $@;
+        $err_post_data //= "Failed to load function $ENV{_HANDLER}: $err";
+        p_log($err_post_data);
         if($ENV{USE_HTTPMETHOD}){
-            http_do('POST', "http://$ENV{AWS_LAMBDA_RUNTIME_API}/2018-06-01/runtime/init/error", $handle_request_data);
+            http_do('POST', "http://$ENV{AWS_LAMBDA_RUNTIME_API}/2018-06-01/runtime/init/error", $err_post_data);
         } else {
             # handle '' escaping for shells
-            $handle_request_data =~ s/'/'"'"'/g;
-            my $request_handled = `curl -v -sS -X POST "http://$ENV{AWS_LAMBDA_RUNTIME_API}/2018-06-01/runtime/init/error" -d '$handle_request_data'`;
+            $err_post_data =~ s/'/'"'"'/g;
+            my $error_handled = `curl -v -sS -X POST "http://$ENV{AWS_LAMBDA_RUNTIME_API}/2018-06-01/runtime/init/error" -d '$err_post_data'`;
             if($?){
                 my $exit_value   = $? >> 8;
                 my $signal_value = $? & 127;
                 die "problem running lambda executor for $ENV{_HANDLER}: signal=$signal_value,exit=$exit_value\n";
             }
-            p_log($request_handled) if length($request_handled);
+            p_log($error_handled) if length($error_handled);
         }
     }
     return ($pkg_name, $perl_method);

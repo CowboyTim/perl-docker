@@ -162,7 +162,7 @@ sub process_request {
                 open(STDIN,  "<&", $oldin)   or die "Can't dup back STDIN: $!\n";
                 local ($?, $!, $@);
                 my $e_err;
-                p_log("executing in $ENV{_HANDLER} in ".($pkg_name//'main').", SCRIPT_NAMESPACE=$ENV{SCRIPT_NAMESPACE} for [$invocation_id]\n")
+                p_log("executing in $ENV{_HANDLER} in namespace:".($pkg_name//'main').", SCRIPT_NAMESPACE=$ENV{SCRIPT_NAMESPACE} for [$invocation_id]\n")
                     if $ENV{DEBUG};
                 if($ENV{SCRIPT_NAMESPACE}){
                     ($response_t, $handle_request_data) = eval "package $pkg_name {$perl_method(\$input_data //= '', \$lambda_context)}";
@@ -172,7 +172,7 @@ sub process_request {
                     ($response_t, $handle_request_data) = eval {&$perl_method($input_data //= '', $lambda_context)};
                     $e_err = $@;
                 }
-                p_log("result: ".($response_t//'no response').",".($handle_request_data//'no data')." [$invocation_id]\n")
+                p_log("result: response:'".($response_t//'<no response>')."', data:'".($handle_request_data//'<no data>')."' [$invocation_id]\n")
                     if $ENV{DEBUG};
                 if($e_err){
                     chomp($e_err);
@@ -235,8 +235,11 @@ sub process_request {
             $handle_request_data //= do {
                 open(my $fake_out_fh_in, "<", $tmp_out_fn)
                     or die "Error opening $tmp_out_fn for re-read (stdout): $!\n";
-                local $/; <$fake_out_fh_in>
+                local $/;
+                <$fake_out_fh_in>;
             };
+            p_log("stdout capture:'".($response_t//'<no response>')."', data:'".($handle_request_data//'<no data>')."' [$invocation_id]\n")
+                if $ENV{DEBUG};
             $response_t          //= 'response';
             $exit_value_wanted   //= 0;
         };

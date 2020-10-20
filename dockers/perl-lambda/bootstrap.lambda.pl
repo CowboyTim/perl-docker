@@ -162,22 +162,18 @@ sub process_request {
                 open(STDIN,  "<&", $oldin)   or die "Can't dup back STDIN: $!\n";
                 local ($?, $!, $@);
                 my $e_err;
+                p_log("executing in $ENV{_HANDLER} in ".($pkg_name//'main').", SCRIPT_NAMESPACE=$ENV{SCRIPT_NAMESPACE} for [$invocation_id]\n")
+                    if $ENV{DEBUG};
                 if($ENV{SCRIPT_NAMESPACE}){
-                    p_log("executing in $ENV{_HANDLER} in $pkg_name, SCRIPT_NAMESPACE=$ENV{SCRIPT_NAMESPACE} for [$invocation_id]\n")
-                        if $ENV{DEBUG};
                     ($response_t, $handle_request_data) = eval "package $pkg_name {$perl_method(\$input_data //= '', \$lambda_context)}";
                     $e_err = $@;
-                    p_log("result: ".($response_t//'no response').",".($handle_request_data//'no data')." [$invocation_id]\n")
-                        if $ENV{DEBUG};
                 } else {
-                    p_log("executing in $ENV{_HANDLER} in main, SCRIPT_NAMESPACE=$ENV{SCRIPT_NAMESPACE} for [$invocation_id]\n")
-                        if $ENV{DEBUG};
                     no strict 'refs';
                     ($response_t, $handle_request_data) = eval {&$perl_method($input_data //= '', $lambda_context)};
                     $e_err = $@;
-                    p_log("result: ".($response_t//'no response').",".($handle_request_data//'no data')." [$invocation_id]\n")
-                        if $ENV{DEBUG};
                 }
+                p_log("result: ".($response_t//'no response').",".($handle_request_data//'no data')." [$invocation_id]\n")
+                    if $ENV{DEBUG};
                 if($e_err){
                     chomp($e_err);
                     die "$e_err\n";

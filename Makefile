@@ -47,9 +47,11 @@ aws_lambda_layer_runtime_zip: mkdist copy_bootstrap save_lambda_docker.perl-lamb
 
 publish_aws_lambda_layer_runtime_zip:
 		aws lambda publish-layer-version \
-                                --layer-name $(PERL_AWS_LAMBDA_LAYER) \
-                                --description 'This is the PERL $(PERL_VERSION) Lambda runtime' \
-                                --zip-file fileb://$(TMPDIR)/dist/perl-lambda-runtime.zip
+				--layer-name $(PERL_AWS_LAMBDA_LAYER) \
+				--description 'This is the PERL $(PERL_VERSION) Lambda runtime' \
+				--license-info "MIT" \
+				--compatible-runtimes provided.al2 \
+				--zip-file fileb://$(TMPDIR)/dist/perl-lambda-runtime.zip
 
 publish_new_runtime: clean mkdist copy_bootstrap docker_save.perl-sandbox aws_lambda_layer_runtime_zip publish_aws_lambda_layer_runtime_zip
 

@@ -35,7 +35,7 @@ $CPAN::Config = {
   'keep_source_where' => "$base_dir/sources",
   'load_module_verbosity' => q[none],
   'make' => q[make],
-  'make_arg' => q[],
+  'make_arg' => q[-j8],
   'make_install_arg' => "INSTALLDIRS=site INSTALL_BASE=$install_base",
   'make_install_make_command' => q[make],
   'makepl_arg' => "INSTALLDIRS=site INSTALL_BASE=$install_base",

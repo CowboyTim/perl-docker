@@ -6,6 +6,9 @@ YUM_URL            ?= file:///
 GPG_URL            ?= file:///
 TMPDIR             ?= /tmp/tmp_$(USER)
 
+PERL_VERSION          ?= 5.32.0
+PERL_AWS_LAMBDA_LAYER ?= perl-5_32_0-runtime
+
 all: perl_docker
 
 .PHONY: perl_docker
@@ -44,8 +47,8 @@ aws_lambda_layer_runtime_zip: mkdist copy_bootstrap save_lambda_docker.perl-lamb
 
 publish_aws_lambda_layer_runtime_zip:
 		aws lambda publish-layer-version \
-                                --layer-name perl-runtime \
-                                --description 'This is the PERL Lambda runtime' \
+                                --layer-name $(PERL_AWS_LAMBDA_LAYER) \
+                                --description 'This is the PERL $(PERL_VERSION) Lambda runtime' \
                                 --zip-file fileb://$(TMPDIR)/dist/perl-lambda-runtime.zip
 
 publish_new_runtime: clean mkdist copy_bootstrap docker_save.perl-sandbox aws_lambda_layer_runtime_zip publish_aws_lambda_layer_runtime_zip

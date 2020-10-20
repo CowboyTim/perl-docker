@@ -37,6 +37,7 @@ ENV PERL5LIB=\
 RUN INSTALL_BASE=/opt /opt/lib64/ld-2.28.so /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -fTi Storable
 RUN INSTALL_BASE=/opt /opt/lib64/ld-2.28.so /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -fTi common::sense
 RUN INSTALL_BASE=/opt /opt/lib64/ld-2.28.so /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -fTi JSON::XS
+RUN INSTALL_BASE=/opt /opt/lib64/ld-2.28.so /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -fTi JSON
 RUN INSTALL_BASE=/opt /opt/lib64/ld-2.28.so /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -fTi POSIX::strptime
 
 # things we never will need for an AWS Lambda (or, if needed, can be adde. for

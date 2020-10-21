@@ -43,6 +43,8 @@ RUN rm -rf /opt/lib/perl5/*/CPAN
 RUN rm -rf /opt/lib/perl5/*/ExtUtils
 RUN rm -rf /opt/lib/perl5/*/Pod
 RUN rm -rf /opt/lib/perl5/*/TAP
+RUN rm -rf /opt/share
+RUN rm -rf /opt/man
 
 # unicode/unicore
 RUN rm -rf /opt/lib/perl5/*/unicore

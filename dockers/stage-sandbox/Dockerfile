@@ -12,7 +12,7 @@ RUN yum install -y gdbm-devel libdb-devel gcc make tar curl xz gzip pkgconfig
 ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/5.32.0/x86_64/CORE
 
 # copy busybox already, add at least 'sh' for docker builds later on if we move from /opt to /
-RUN mkdir -p /opt/lib64 && mkdir -p /opt/bin && cp /busybox /opt/busybox && (cd /opt/bin && ln -s /busybox sh)
+RUN mkdir -p /opt/lib64 && mkdir -p /opt/bin && cp /busybox /opt/bin/busybox && (cd /opt/bin && ln -s busybox sh)
 
 # now we add OS dependencies from / to /opt, as later on we will be squashing
 # the docker fs by moving everything from /opt to / and abandon what's there
@@ -139,4 +139,4 @@ RUN find /opt/lib/perl5/ -type f -name '*.pod'    |xargs rm
 # our test script
 COPY test_core_modules.pl /opt/scripts/
 
-ENTRYPOINT ["/busybox", "sh"]
+ENTRYPOINT ["/opt/bin/busybox", "sh"]

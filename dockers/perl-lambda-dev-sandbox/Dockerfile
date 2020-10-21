@@ -64,4 +64,4 @@ RUN rm -rf /opt/scripts
 # docker specific, won't be used for the lambda zip
 ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/5.32.0/x86_64/CORE
 ENTRYPOINT ["/opt/lib64/ld-linux-x86-64.so.2", "/opt/bin/perl"]
-CMD ["-e", "exec '/opt/busybox', 'sh'"]
+CMD ["-e", "exec '/opt/bin/busybox', 'sh'"]

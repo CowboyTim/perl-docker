@@ -18,20 +18,23 @@ COPY --from=lambda-sb-perl  /opt /opt
 ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/5.32.0/x86_64/CORE
 ENV PERL5LIB=\
 /opt/tmp/cpan_local/lib/perl5:\
+/opt/tmp/cpan_local/lib/perl5/auto:\
+/opt/tmp/cpan_local/lib/perl5/site_perl:\
+/opt/tmp/cpan_local/lib/perl5/site_perl/auto:\
 /opt/tmp/cpan_local/lib/perl5/x86_64:\
 /opt/tmp/cpan_local/lib/perl5/x86_64/auto:\
 /opt/lib/perl5:\
-/opt/lib/perl5/vendor_perl:\
+/opt/lib/perl5/site_perl:\
+/opt/lib/perl5/site_perl/auto:\
+/opt/lib/perl5/site_perl/5.32.0/:\
+/opt/lib/perl5/site_perl/5.32.0/auto:\
+/opt/lib/perl5/site_perl/5.32.0/x86_64:\
+/opt/lib/perl5/site_perl/5.32.0/x86_64/auto:\
 /opt/lib/perl5/auto:\
-/opt/lib/perl5/vendor_perl/auto:\
-/opt/lib/perl5/x86_64:\
-/opt/lib/perl5/x86_64/auto:\
-/opt/lib64/perl5:\
-/opt/lib64/perl5/vendor_perl:\
-/opt/lib64/perl5/auto:\
-/opt/lib64/perl5/vendor_perl/auto:\
-/opt/lib64/perl5/x86_64:\
-/opt/lib64/perl5/x86_64/auto
+/opt/lib/perl5/5.32.0:\
+/opt/lib/perl5/5.32.0/auto:\
+/opt/lib/perl5/5.32.0/x86_64:\
+/opt/lib/perl5/5.32.0/x86_64/auto
 
 # install perl extra cpan's
 RUN INSTALL_BASE=/opt /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -fTi common::sense

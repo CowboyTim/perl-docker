@@ -13,7 +13,7 @@ all: perl_docker
 
 .PHONY: perl_docker
 
-perl_docker: build_docker.base-sandbox build_docker.stage-sandbox build_docker.perl-sandbox
+perl_docker: build_docker.base-sandbox build_docker.stage-sandbox build_docker.perl-sandbox perl_docker_tag.perl-sandbox
 
 aws_lambda_perl_runtime: aws_lambda_layer_runtime_zip
 
@@ -33,8 +33,9 @@ build_docker.%:
 			--tag $(DOCKER_REGISTRY)/$*:latest \
 			$(EXTRA_DOCKER_OPTS)
 
-docker_tag.%:
-		docker tag $(DOCKER_REGISTRY)/perl-sandbox:latest $(DOCKER_REGISTRY)/$*:latest
+perl_docker_tag.%:
+		docker tag $(DOCKER_REGISTRY)/$*:latest $(DOCKER_REGISTRY)/perl:latest
+		docker tag $(DOCKER_REGISTRY)/$*:latest $(DOCKER_REGISTRY)/perl:$(PERL_VERSION)
 
 docker_save.%: mkdist
 		cd $(TMPDIR)/tmpdist/ && (docker save $(DOCKER_REGISTRY)/$*:latest|tar xfO - --wildcards '*/layer.tar'|tar xf -) && chmod -R +w $(TMPDIR)/tmpdist/

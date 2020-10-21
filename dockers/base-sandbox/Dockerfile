@@ -7,6 +7,6 @@ FROM scratch
 COPY --from=base-image / /
 COPY --from=busybox    /bin/busybox /
 
-RUN yum install -y make gcc tar gzip pkgconfig
+RUN yum install -y make gcc tar gzip pkgconfig man groff
 
 ENTRYPOINT ["/usr/bin/bash", "-i"]

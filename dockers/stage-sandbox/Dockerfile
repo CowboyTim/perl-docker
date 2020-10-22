@@ -5,14 +5,21 @@ FROM ${docker_registry}base-sandbox:latest as b-sb
 
 WORKDIR /opt/src/perl
 
-# needed for perl's building
-RUN yum install -y gdbm-devel libdb-devel gcc make tar curl xz gzip pkgconfig
+# needed for building PERL and possibly cpan stuff (note that they are not
+# included in the end perl-sandbox as they don't go in /opt)
+RUN yum install -y \
+        gdbm-devel libdb-devel gcc make tar curl xz gzip pkgconfig \
+        wget zip less bzip2 bash patch
 
 # to be sure to have that
 ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/5.32.0/x86_64/CORE
 
-# copy busybox already, add at least 'sh' for docker builds later on if we move from /opt to /
-RUN mkdir -p /opt/lib64 && mkdir -p /opt/bin && cp /busybox /opt/bin/busybox && (cd /opt/bin && ln -s busybox sh)
+# copy busybox for debugging, add at least 'sh' for docker builds later on if
+# we move from /opt to /. busybox can later on also be used in the perl-docker
+RUN mkdir -p /opt/lib64 \
+    && mkdir -p /opt/bin \
+    && cp /busybox /opt/bin/busybox \
+    && (cd /opt/bin && ln -s busybox sh)
 
 # now we add OS dependencies from / to /opt, as later on we will be squashing
 # the docker fs by moving everything from /opt to / and abandon what's there
@@ -72,12 +79,6 @@ RUN \
 WORKDIR /
 
 ENV PERL5LIB=\
-/opt/tmp/cpan_local/lib/perl5:\
-/opt/tmp/cpan_local/lib/perl5/auto:\
-/opt/tmp/cpan_local/lib/perl5/site_perl:\
-/opt/tmp/cpan_local/lib/perl5/site_perl/auto:\
-/opt/tmp/cpan_local/lib/perl5/x86_64:\
-/opt/tmp/cpan_local/lib/perl5/x86_64/auto:\
 /opt/lib/perl5:\
 /opt/lib/perl5/site_perl:\
 /opt/lib/perl5/site_perl/auto:\
@@ -91,28 +92,11 @@ ENV PERL5LIB=\
 /opt/lib/perl5/5.32.0/x86_64:\
 /opt/lib/perl5/5.32.0/x86_64/auto
 
-# install CPAN modules for CPAN in /opt/tmp/cpan_local. This is handled by cpan_config.pl
+# cpan config
 COPY cpan_config.pl /opt
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  CPAN
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  YAML
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  ExtUtils::PkgConfig
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  ExtUtils::Helpers
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  HTTP::Date
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  HTML::Tiny
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  install
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Canary::Stability
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Algorithm::Diff
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Spiffy
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Text::Diff
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Base
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Deep
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::LeakTrace
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  inc::latest
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Module::Build
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  common::sense
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::More
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Simple
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Builder
+
+# our test script
+COPY test_core_modules.pl /opt/scripts/
 
 # cleanup stuff in /opt we never will need
 RUN rm -rf /opt/src
@@ -128,15 +112,17 @@ RUN rm -rf /opt/lib/perl5/*/pod
 # that it's probably better to do that in the docker that inherit from this
 # docker.
 #
+# temp use for cpan:
 # E.g.:
-# RUN INSTALL_BASE=/opt /opt/bin/cpan -j /opt/cpan_config.pl -Ti JSON::XS
+# RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  CPAN
+#
+# add in the perl docker:
+# E.g.:
+# RUN /opt/bin/cpan -j /opt/cpan_config.pl -Ti JSON::XS
 #
 
 # after the extra cpan modules install, cleanup the .h files
 RUN find /opt/lib/perl5/ -type f -name '.packlist'|xargs rm
-RUN find /opt/lib/perl5/ -type f -name '*.pod'    |xargs rm
 
-# our test script
-COPY test_core_modules.pl /opt/scripts/
-
+ENV PATH=/opt/bin/:/opt:$PATH
 ENTRYPOINT ["/opt/bin/busybox", "sh"]

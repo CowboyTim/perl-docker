@@ -25,5 +25,5 @@ ENV PERL5LIB=\
 /opt/lib/perl5/5.32.0/auto:\
 /opt/lib/perl5/5.32.0/x86_64:\
 /opt/lib/perl5/5.32.0/x86_64/auto
-ENTRYPOINT ["/bin/perl"]
-CMD ["-e", "exec '/busybox', 'sh'"]
+ENTRYPOINT ["/opt/bin/perl"]
+CMD ["-e", "exec '/opt/bin/busybox', 'sh'"]

@@ -61,6 +61,9 @@ RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_co
 RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::More
 RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Simple
 RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Builder
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Harness
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test2
+RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test2::Formatter
 
 # install perl extra cpan's, those go in /opt, as we add them to be used by
 # Lambda note that if you need a module that's already added as a dependency in
@@ -78,7 +81,7 @@ RUN rm -rf /opt/share
 RUN rm -rf /opt/man
 
 # remove the cpan cache
-RUN rm -rf /opt/perl/cpan
+RUN rm -rf /opt/perl/cpan && rmdir /opt/perl
 
 # unicode/unicore
 RUN rm -rf /opt/lib/perl5/*/unicore

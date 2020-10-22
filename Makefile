@@ -13,7 +13,7 @@ all: perl_docker
 
 .PHONY: perl_docker
 
-perl_docker: build_docker.base-sandbox build_docker.stage-sandbox build_docker.perl-sandbox perl_docker_tag.perl-sandbox
+perl_docker: build_docker.base-sandbox build_docker.stage-sandbox build_docker.perl-sandbox perl_docker_tag.perl-sandbox docker_prune
 
 aws_lambda_perl_runtime: aws_lambda_layer_runtime_zip
 

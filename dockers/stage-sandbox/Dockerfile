@@ -7,9 +7,22 @@ WORKDIR /opt/src/perl
 
 # needed for building PERL and possibly cpan stuff (note that they are not
 # included in the end perl-sandbox as they don't go in /opt)
-RUN yum install -y \
-        gdbm-devel libdb-devel gcc make tar curl xz gzip pkgconfig \
-        wget zip less bzip2 bash patch
+RUN yum install -y  \
+        gdbm-devel  \
+        libdb-devel \
+        gcc         \
+        make        \
+        tar         \
+        curl        \
+        xz          \
+        gzip        \
+        pkgconfig   \
+        wget        \
+        zip         \
+        less        \
+        bzip2       \
+        bash        \
+        patch
 
 # to be sure to have that
 ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/5.32.0/x86_64/CORE

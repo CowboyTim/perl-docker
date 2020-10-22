@@ -3,36 +3,30 @@ ARG upstream_tag
 
 FROM ${docker_registry}base-sandbox:latest as b-sb
 
-WORKDIR /opt/src/perl
-
 # needed for building PERL and possibly cpan stuff (note that they are not
 # included in the end perl-sandbox as they don't go in /opt)
-RUN yum install -y  \
-        gdbm-devel  \
-        libdb-devel \
-        gcc         \
-        make        \
-        tar         \
-        curl        \
-        xz          \
-        gzip        \
-        pkgconfig   \
-        wget        \
-        zip         \
-        less        \
-        bzip2       \
-        bash        \
+RUN yum install -y   \
+        gdbm-devel   \
+        libdb-devel  \
+        gcc          \
+        make         \
+        tar          \
+        curl         \
+        xz           \
+        gzip         \
+        pkgconfig    \
+        wget         \
+        zip          \
+        less         \
+        bzip2        \
+        bash         \
+        ncurses-libs \
+        coreutils    \
+        findutils    \
         patch
 
 # to be sure to have that
 ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/5.32.0/x86_64/CORE
-
-# copy busybox for debugging, add at least 'sh' for docker builds later on if
-# we move from /opt to /. busybox can later on also be used in the perl-docker
-RUN    mkdir -p /opt/lib64          \
-    && mkdir -p /opt/bin            \
-    && cp /busybox /opt/bin/busybox \
-    && (cd /opt/bin && ln -s busybox sh)
 
 # now we add OS dependencies from / to /opt, as later on we will be squashing
 # the docker fs by moving everything from /opt to / and abandon what's there
@@ -56,13 +50,13 @@ RUN    mkdir -p                             /opt/lib64/ \
     && (cd /opt && ln -s / opt)
 
 # fix a few symlinks
-RUN rm /opt/lib64/libcrypt.so         && (cd /opt/lib64 && ln -s libcrypt.so.1     libcrypt.so)
-RUN rm /opt/lib64/libdl.so            && (cd /opt/lib64 && ln -s libdl.so.2        libdl.so)
-RUN rm /opt/lib64/libnsl.so           && (cd /opt/lib64 && ln -s libnsl.so.1       libnsl.so)
-RUN rm /opt/lib64/libutil.so          && (cd /opt/lib64 && ln -s libutil.so.1      libutil.so)
-RUN rm /opt/lib64/libc.so             && (cd /opt/lib64 && ln -s libc.so.6         libc.so)
-RUN rm /opt/lib64/libm.so             && (cd /opt/lib64 && ln -s libm.so.6         libm.so)
-RUN rm /opt/lib64/libpthread.so       && (cd /opt/lib64 && ln -s libpthread.so.0   libpthread.so)
+RUN    rm /opt/lib64/libcrypt.so         && (cd /opt/lib64 && ln -s libcrypt.so.1     libcrypt.so)   \
+    && rm /opt/lib64/libdl.so            && (cd /opt/lib64 && ln -s libdl.so.2        libdl.so)      \
+    && rm /opt/lib64/libnsl.so           && (cd /opt/lib64 && ln -s libnsl.so.1       libnsl.so)     \
+    && rm /opt/lib64/libutil.so          && (cd /opt/lib64 && ln -s libutil.so.1      libutil.so)    \
+    && rm /opt/lib64/libc.so             && (cd /opt/lib64 && ln -s libc.so.6         libc.so)       \
+    && rm /opt/lib64/libm.so             && (cd /opt/lib64 && ln -s libm.so.6         libm.so)       \
+    && rm /opt/lib64/libpthread.so       && (cd /opt/lib64 && ln -s libpthread.so.0   libpthread.so)
 
 # PERL CORE modules need extra libs from the OS
 RUN    \
@@ -70,15 +64,37 @@ RUN    \
     && cp -a /usr/lib64/libdb.so*           /opt/lib64/ \
     && cp -a /usr/lib64/libdb-*.so*         /opt/lib64/
 
-RUN ls -l /opt/lib64/
+# copy a real bash temporarily: before busybox --install -s as that add 'sh'
+RUN mkdir -p /opt/bin                            \
+    && cp /bin/bash  /opt/bin/bash               \
+    && (cd /opt/bin && ln -s ./bash sh)          \
+    && cp /lib64/libtinfo.so*  /opt/lib64/       \
+    && (cd /opt/lib64 && ln -s libtinfo.so.5 libtinfo.so)
 
 
+# copy busybox for debugging, add at least 'sh' for docker builds later on if
+# we move from /opt to /. busybox can later on also be used in the perl-docker
+RUN    mkdir -p /opt/lib64                   \
+    && mkdir -p /opt/bin                     \
+    && cp /busybox /opt/bin/busybox          \
+    && (cd /opt/bin && for m in $(/opt/bin/busybox --list); do ln -s ./busybox $m; done)
+
+ENV PATH=/opt/bin:$PATH
+
+# make sure to move /bin/sh away and start Configure with /opt/bin/sh which is
+# at this point a full sh -> bash.  This is for later on, when perl in /opt
+# needs to use sh for `` and system() calls, the default needs to be
+# /opt/bin/sh as /bin/sh will simply not be there.
+
+WORKDIR /opt/src/perl
 RUN \
        curl -sSL -k --insecure https://www.cpan.org/src/5.0/perl-5.32.0.tar.xz -o perl-5.32.0.tar.xz \
     && echo '6f436b447cf56d22464f980fac1916e707a040e96d52172984c5d184c09b859b *perl-5.32.0.tar.xz' | sha256sum -c - \
     && tar --strip-components=1 -xaf perl-5.32.0.tar.xz -C /opt/src/perl \
     && rm perl-5.32.0.tar.xz                                             \
-    && ./Configure                                                       \
+    && mv /bin/sh /bin/sh.b                                              \
+    && /opt/bin/sh                                                       \
+        ./Configure                                                      \
         -Duse64bitall                                                    \
         -Darchname=x86_64                                                \
         -Duseshrplib                                                     \
@@ -87,9 +103,13 @@ RUN \
         -Dldflags='-Wl,-R/opt/lib -Wl,-R/opt/lib64 -Wl,--dynamic-linker,/opt/lib64/ld-linux-x86-64.so.2' \
         -des                                                             \
     && make -j16                                                         \
-    && make install
+    && make -j16 install                                                 \
+    && mv /bin/sh.b /bin/sh
 
 WORKDIR /
+
+# after the perl build, switch the fat bash back to busybox sh
+RUN (cd /opt/bin && rm bash sh && ln -s busybox sh) && rm /opt/lib64/libtinfo*
 
 ENV PERL5LIB=\
 /opt/lib/perl5:\

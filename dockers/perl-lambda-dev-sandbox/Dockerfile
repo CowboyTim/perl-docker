@@ -15,6 +15,13 @@ FROM scratch
 COPY --from=build-helper    / /
 COPY --from=lambda-sb-perl  /opt /opt
 
+# as the provided.al2 Amazon Linux 2 bootstrap lambda might be different then
+# the glibc in /opt/lib64 from the perl docker we remove the glibc we added and
+# make /opt/lib64 a sumlink to /lib64 just to be sure.
+#
+# This won't work when we use e.g. CentOS 8, as this has a newer glibc version
+#RUN rm -rf /opt/lib64 && ln -s /lib64 /opt/lib64
+
 ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/5.32.0/x86_64/CORE
 ENV PERL5LIB=\
 /opt/tmp/cpan_local/lib/perl5:\

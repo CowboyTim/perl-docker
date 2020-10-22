@@ -16,8 +16,8 @@ ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/5.32.0/x86_64/CORE
 
 # copy busybox for debugging, add at least 'sh' for docker builds later on if
 # we move from /opt to /. busybox can later on also be used in the perl-docker
-RUN mkdir -p /opt/lib64 \
-    && mkdir -p /opt/bin \
+RUN    mkdir -p /opt/lib64          \
+    && mkdir -p /opt/bin            \
     && cp /busybox /opt/bin/busybox \
     && (cd /opt/bin && ln -s busybox sh)
 

@@ -15,9 +15,7 @@ all: perl_docker
 
 perl_docker: build_docker.base-sandbox build_docker.stage-sandbox build_docker.perl-sandbox perl_docker_tag.perl-sandbox docker_prune
 
-aws_lambda_perl_runtime: aws_lambda_layer_runtime_zip
-
-deploy: aws_lambda_perl_runtime publish_aws_lambda_layer_runtime_zip
+deploy: aws_lambda_layer_runtime_zip publish_aws_lambda_layer_runtime_zip
 
 build_docker.%:
 		docker build \
@@ -40,7 +38,7 @@ perl_docker_tag.%:
 docker_save.%: mkdist
 		cd $(TMPDIR)/tmpdist/ && (docker save $(DOCKER_REGISTRY)/$*:latest|tar xfO - --wildcards '*/layer.tar'|tar xf -) && chmod -R +w $(TMPDIR)/tmpdist/
 
-save_lambda_docker.%: perl_docker build_docker.perl-lambda-dev-sandbox build_docker.perl-lambda
+save_lambda_docker.%: perl_docker build_docker.perl-lambda-dev-sandbox build_docker.perl-lambda docker_prune
 		cd $(TMPDIR)/tmpdist/ && (docker save $(DOCKER_REGISTRY)/$*:latest|tar xfO - --wildcards '*/layer.tar'|tar xf -) && chmod -R +w $(TMPDIR)/tmpdist/
 
 aws_lambda_layer_runtime_zip: mkdist copy_bootstrap save_lambda_docker.perl-lambda

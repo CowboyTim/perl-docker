@@ -1,6 +1,6 @@
 ARG docker_registry
 ARG upstream_tag
-
+LABEL maintainer='Tim Aerts <aardbeiplantje@gmail.com>'
 FROM ${docker_registry}base-sandbox:latest as b-sb
 
 # needed for building PERL and possibly cpan stuff (note that they are not

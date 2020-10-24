@@ -132,13 +132,14 @@ COPY cpan_config.pl /opt
 COPY test_core_modules.pl /opt/scripts/
 
 # cleanup stuff in /opt we never will need
-RUN rm -rf /opt/src
-RUN rm -rf /opt/share
-RUN rm -rf /opt/man
-RUN rm -rf /opt/include
-RUN rm -rf /opt/games
-RUN rm -rf /opt/lib/python*
-RUN rm -rf /opt/lib/perl5/*/pod
+RUN    rm -rf /opt/src                \
+    && rm -rf /opt/share              \
+    && rm -rf /opt/man                \
+    && rm -rf /opt/include            \
+    && rm -rf /opt/games              \
+    && rm -rf /opt/lib/python*        \
+    && rm -rf /opt/lib/perl5/*/pod    \
+    && mkdir -p /opt/tmp && chmod 1777 /opt/tmp
 
 # install CPAN modules for perl itself in /opt, keep this 1 cpan per RUN for
 # docker's caching features. Use the correct INSTALL_BASE=/opt for this. Note

@@ -1,6 +1,7 @@
 ARG docker_registry
 ARG upstream_tag
 
+LABEL maintainer='Tim Aerts <aardbeiplantje@gmail.com>'
 FROM ${docker_registry}stage-sandbox:latest    as staged-sb-perl
 FROM scratch
 COPY --from=staged-sb-perl /opt /opt

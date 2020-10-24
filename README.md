@@ -1,14 +1,17 @@
 # Introduction
 
-This is perl 5.32.0. It's build to be used just as a docker that only contains
-perl. The perl distribution is installed in /opt and is a vanilla perl install.
-All bin scripts and binaries within a typical perl distribution are there.
+This is perl 5.32.0. 
+
+This perl is built to be used just as a docker that only contains perl. The
+perl distribution is installed in /opt and is a vanilla perl install. All bin
+scripts and binaries within a typical perl distribution are installed.
 
 The operating system perl was built against is not part of this docker,
 instead, the glibc version is compied to /opt/lib64. This has a couple of
 advantages and disadvantages:
 
 * the size is very small and to the point: ~70MB
+* only 1 perl in the docker image
 * you can't add cpan modules in the docker itself
 
 This can easily be fixed by making a new docker where you combine this with the

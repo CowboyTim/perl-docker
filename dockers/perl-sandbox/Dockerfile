@@ -22,6 +22,6 @@ ENV PERL5LIB=\
 /opt/lib/perl5/5.32.0/x86_64/auto
 ENV PATH=/opt/bin/:/opt:$PATH
 ENV TMPDIR=/opt/tmp
-RUN /busybox ln -s /opt/tmp /tmp && /busybox rm /busybox
+RUN /busybox ln -s /opt/tmp /tmp && /busybox rm -rf /busybox bin
 ENTRYPOINT ["/opt/lib64/ld-linux-x86-64.so.2", "/opt/bin/perl"]
 CMD ["-e", "exec '/opt/bin/busybox', 'sh'"]

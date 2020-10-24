@@ -138,7 +138,6 @@ RUN    rm -rf /opt/src                \
     && rm -rf /opt/include            \
     && rm -rf /opt/games              \
     && rm -rf /opt/lib/python*        \
-    && rm -rf /opt/lib/perl5/*/pod    \
     && mkdir -p /opt/tmp && chmod 1777 /opt/tmp
 
 # install CPAN modules for perl itself in /opt, keep this 1 cpan per RUN for

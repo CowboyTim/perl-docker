@@ -30,7 +30,7 @@ You can use this perl docker like this:
 
 Similar, other tools can be run like this:
 
-  `$ docker run -it -rm aardbeiplantje/perl:5.32.0 /opt/bin/perldoc POSIX`
+  `$ docker run -it --rm aardbeiplantje/perl:5.32.0 /opt/bin/perldoc POSIX`
 
 # Images
 

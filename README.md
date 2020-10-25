@@ -44,8 +44,8 @@ TODO:
 * aardbeiplantje/perl:5.32.0-dev
 
 
-# License
 
-See [license information](https://dev.perl.org/licenses/)
+
+
 
 

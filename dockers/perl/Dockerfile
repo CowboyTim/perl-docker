@@ -1,21 +1,22 @@
 ARG docker_registry
 ARG upstream_tag
-ARG perl_version=5.32.0
+ARG perl_version
 ARG remote_docker_registry
 
 # start new from the dev docker, copy /opt to /opt
-FROM ${docker_registry}perl:${perl_version}-dev as dev-sb-perl
+FROM ${docker_registry}perl:${perl_version}-dev-latest as dev-sb-perl
+
+# cleanup cpan stuff
+RUN rm -rf /opt/tmp/cpan_local && rm -rf /opt/tmp && rm -rf /opt/perl
+
+# setup a /tmp for File::Temp
+RUN mkdir /opt/tmp && chmod 1777 /opt/tmp
+
+# start new to have an empty layer
 FROM scratch
 COPY --from=dev-sb-perl /opt /opt
 
-ARG perl_version=5.32.0
-
-# temporarily add busybox again, we need to make a symlink from /tmp to
-# /opt/tmp for File::Temp to work
-COPY --from=dev-sb-perl /opt/bin/busybox /busybox
-COPY --from=dev-sb-perl /opt/bin/busybox /bin/sh
-RUN /busybox ln -s /opt/tmp /tmp && /busybox rm -rf /busybox bin
-
+ARG perl_version
 MAINTAINER Tim Aerts <aardbeiplantje@gmail.com>
 
 # ENV variables, still set TMPDIR for File::Temp

@@ -1,5 +1,6 @@
 ARG docker_registry
 ARG upstream_tag
+ARG perl_version
 ARG remote_docker_registry
 
 # we start from Amazon Linux 2 with sources to build perl against, we also add
@@ -11,7 +12,7 @@ FROM scratch
 COPY --from=base-image / /
 COPY --from=busybox    /bin/busybox /
 
-ARG perl_version=5.32.0
+ARG perl_version
 
 MAINTAINER Tim Aerts <aardbeiplantje@gmail.com>
 
@@ -129,7 +130,15 @@ WORKDIR /
 # after the perl build, switch the fat bash back to busybox sh
 RUN (cd /opt/bin && rm bash sh && ln -s busybox sh) && rm /opt/lib64/libtinfo*
 
+ENV INSTALL_BASE=/opt/tmp/cpan_local
+ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/$perl_version/x86_64/CORE
 ENV PERL5LIB=\
+$INSTALL_BASE/lib/perl5:\
+$INSTALL_BASE/lib/perl5/auto:\
+$INSTALL_BASE/lib/perl5/site_perl:\
+$INSTALL_BASE/lib/perl5/site_perl/auto:\
+$INSTALL_BASE/lib/perl5/x86_64:\
+$INSTALL_BASE/lib/perl5/x86_64/auto:\
 /opt/lib/perl5:\
 /opt/lib/perl5/site_perl:\
 /opt/lib/perl5/site_perl/auto:\
@@ -145,6 +154,35 @@ ENV PERL5LIB=\
 
 # cpan config
 COPY cpan_config.pl /opt
+
+# install CPAN modules for CPAN in INSTALL_BASE=/opt/tmp/cpan_local. This is
+# handled by cpan_config.pl. This is because we don't want cpan-needed modules
+# in Lambda, we can't do anything with those and they take up space. Best is to
+# look out for those while installing cpan modules that are needed, often they
+# bring in dependencies that aren't needed later on at runtime
+RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  CPAN
+RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  YAML
+RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  ExtUtils::PkgConfig
+RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  ExtUtils::Helpers
+RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  HTTP::Date
+RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  HTML::Tiny
+RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  install
+RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Canary::Stability
+RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Algorithm::Diff
+RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Spiffy
+RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Text::Diff
+RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Base
+RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Deep
+RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::LeakTrace
+RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  inc::latest
+RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Module::Build
+RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  common::sense
+RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::More
+RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Simple
+RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Builder
+RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Harness
+RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test2
+RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test2::Formatter
 
 # cleanup stuff in /opt we never will need
 RUN    rm -rf /opt/src                \
@@ -166,7 +204,7 @@ RUN    rm -rf /opt/src                \
 #
 # add in the perl docker:
 # E.g.:
-# RUN /opt/bin/cpan -j /opt/cpan_config.pl -Ti JSON::XS
+# RUN INSTALL_BASE=/opt /opt/bin/cpan -j /opt/cpan_config.pl -Ti JSON::XS
 #
 
 # after the extra cpan modules install, cleanup the .h files

@@ -1,23 +1,12 @@
 ARG docker_registry
 ARG upstream_tag
 ARG remote_docker_registry
-ARG perl_version=5.32.0
+ARG perl_version
 
-#
-# The PERL docker has everything in /opt, even the glibc. But nothing to build
-# new CPAN's with, so we also merge from a regular centos docker to have make
-# and other libraries, not even bash is there.
-#
-# Note that we can use other dockers to do this too
-#
+# we start this from the perl:<version>-dev-latest docker, so we have build tools
+FROM ${docker_registry}perl:${perl_version}-dev-latest as lambda-sb-perl
 
-FROM ${docker_registry}perl:latest                         as lambda-sb-perl
-FROM ${remote_docker_registry}amazonlinux:2-with-sources   as build-helper
-FROM scratch
-COPY --from=build-helper    / /
-COPY --from=lambda-sb-perl  /opt /opt
-
-ARG perl_version=5.32.0
+ARG perl_version
 
 MAINTAINER Tim Aerts <aardbeiplantje@gmail.com>
 
@@ -73,35 +62,6 @@ ENV PERL5LIB=\
 /opt/lib/perl5/$perl_version/auto:\
 /opt/lib/perl5/$perl_version/x86_64:\
 /opt/lib/perl5/$perl_version/x86_64/auto
-
-# install CPAN modules for CPAN in /opt/tmp/cpan_local. This is handled by
-# cpan_config.pl. This is because we don't want cpan-needed modules in Lambda,
-# we can't do anything with those and they take up space. Best is to look out
-# for those while installing cpan modules that are needed, often they bring in
-# dependencies that aren't needed later on at runtime
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  CPAN
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  YAML
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  ExtUtils::PkgConfig
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  ExtUtils::Helpers
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  HTTP::Date
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  HTML::Tiny
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  install
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Canary::Stability
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Algorithm::Diff
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Spiffy
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Text::Diff
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Base
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Deep
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::LeakTrace
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  inc::latest
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Module::Build
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  common::sense
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::More
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Simple
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Builder
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Harness
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test2
-RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test2::Formatter
 
 # install perl extra cpan's, those go in /opt, as we add them to be used by
 # Lambda note that if you need a module that's already added as a dependency in

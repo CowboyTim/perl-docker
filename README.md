@@ -1,6 +1,6 @@
 # Introduction
 
-This is perl 5.32.0. 
+This is a PERL docker.
 
 This perl is built to be used just as a docker that only contains perl. The
 perl distribution is installed in /opt and is a vanilla perl install. All bin
@@ -10,7 +10,7 @@ The operating system perl was built against is not part of this docker,
 instead, the glibc version is compied to /opt/lib64. This has a couple of
 advantages and disadvantages:
 
-* the size is very small and to the point: ~70MB
+* the size is very small and to the point: ~120MB
 * only 1 perl in the docker image
 * you can't add cpan modules in the docker itself
 
@@ -37,15 +37,11 @@ Similar, other tools can be run like this:
 
 # Images
 
-* aardbeiplantje/perl:<version:5.32.0>
+runtime:
+* aardbeiplantje/perl:5.32.0
+* aardbeiplantje/perl:5.32.0-latest
 * aardbeiplantje/perl:latest
 
-TODO:
-* aardbeiplantje/perl:5.32.0-dev
-
-
-
-
-
-
+dev:
+* aardbeiplantje/5.32.0-dev-latest
 

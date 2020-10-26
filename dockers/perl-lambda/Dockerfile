@@ -1,11 +1,11 @@
 ARG docker_registry
 ARG upstream_tag
 ARG remote_docker_registry
-ARG perl_version=5.32.0
+ARG perl_version
 
-FROM ${docker_registry}perl-lambda-dev:latest as prl
+FROM ${docker_registry}perl:${perl_version}-lambda-dev-latest as prl
 FROM scratch
-ARG perl_version=5.32.0
+ARG perl_version
 # there's a symlink /opt/opt -> /opt, so this should work in /opt/bin, or /bin/
 COPY --from=prl  /opt /
 ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/$perl_version/x86_64/CORE

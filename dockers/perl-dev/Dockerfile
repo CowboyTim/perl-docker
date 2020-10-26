@@ -1,6 +1,6 @@
 ARG docker_registry
 ARG upstream_tag
-ARG perl_version
+ARG perl_version=5.32.0
 ARG remote_docker_registry
 
 # we start from Amazon Linux 2 with sources to build perl against, we also add
@@ -12,7 +12,9 @@ FROM scratch
 COPY --from=base-image / /
 COPY --from=busybox    /bin/busybox /
 
-ARG perl_version
+ENV perl_version=${perl_version:-5.32.0}
+RUN echo Building for PERL ${perl_version}
+RUN echo DOCKER_TAG: ${DOCKER_TAG}
 
 MAINTAINER Tim Aerts <aardbeiplantje@gmail.com>
 
@@ -42,7 +44,7 @@ RUN yum install -y   \
         patch
 
 # to be sure to have that
-ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/$perl_version/x86_64/CORE
+ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/${perl_version}/x86_64/CORE
 
 # now we add OS dependencies from / to /opt, as later on we will be squashing
 # the docker fs by moving everything from /opt to / and abandon what's there
@@ -104,7 +106,7 @@ ENV PATH=/opt/bin:$PATH
 
 WORKDIR /opt/src/perl
 RUN \
-       export perl_tar=perl-$perl_version.tar.xz;                                            \
+       export perl_tar=perl-${perl_version}.tar.xz;                                            \
        echo   P:$perl_tar;                                                                   \
        curl -sSL -k --insecure https://www.cpan.org/src/5.0/$perl_tar -o $perl_tar           \
     && echo '6f436b447cf56d22464f980fac1916e707a040e96d52172984c5d184c09b859b *'${perl_tar}  \
@@ -131,7 +133,7 @@ WORKDIR /
 RUN (cd /opt/bin && rm bash sh && ln -s busybox sh) && rm /opt/lib64/libtinfo*
 
 ENV INSTALL_BASE=/opt/tmp/cpan_local
-ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/$perl_version/x86_64/CORE
+ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/${perl_version}/x86_64/CORE
 ENV PERL5LIB=\
 $INSTALL_BASE/lib/perl5:\
 $INSTALL_BASE/lib/perl5/auto:\
@@ -142,15 +144,15 @@ $INSTALL_BASE/lib/perl5/x86_64/auto:\
 /opt/lib/perl5:\
 /opt/lib/perl5/site_perl:\
 /opt/lib/perl5/site_perl/auto:\
-/opt/lib/perl5/site_perl/$perl_version/:\
-/opt/lib/perl5/site_perl/$perl_version/auto:\
-/opt/lib/perl5/site_perl/$perl_version/x86_64:\
-/opt/lib/perl5/site_perl/$perl_version/x86_64/auto:\
+/opt/lib/perl5/site_perl/${perl_version}/:\
+/opt/lib/perl5/site_perl/${perl_version}/auto:\
+/opt/lib/perl5/site_perl/${perl_version}/x86_64:\
+/opt/lib/perl5/site_perl/${perl_version}/x86_64/auto:\
 /opt/lib/perl5/auto:\
-/opt/lib/perl5/$perl_version:\
-/opt/lib/perl5/$perl_version/auto:\
-/opt/lib/perl5/$perl_version/x86_64:\
-/opt/lib/perl5/$perl_version/x86_64/auto
+/opt/lib/perl5/${perl_version}:\
+/opt/lib/perl5/${perl_version}/auto:\
+/opt/lib/perl5/${perl_version}/x86_64:\
+/opt/lib/perl5/${perl_version}/x86_64/auto
 
 # cpan config
 COPY cpan_config.pl /opt

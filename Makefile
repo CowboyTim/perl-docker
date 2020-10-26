@@ -25,7 +25,6 @@ build_docker.perl-dev:
 			$(DOCKER_OPTS) \
 			--build-arg docker_registry=$(DOCKER_REGISTRY)/ \
 			--build-arg remote_docker_registry=$(REMOTE_DOCKER_REGISTRY) \
-			--build-arg perl_version=$(PERL_VERSION) \
 			--build-arg YUM_URL=$(YUM_URL) \
 			--build-arg YUM_BASE=$(YUM_BASE) \
 			--build-arg GPG_URL=$(GPG_URL) \
@@ -41,7 +40,6 @@ build_docker.perl-lambda-dev:
 			$(DOCKER_OPTS) \
 			--build-arg docker_registry=$(DOCKER_REGISTRY)/ \
 			--build-arg remote_docker_registry=$(REMOTE_DOCKER_REGISTRY) \
-			--build-arg perl_version=$(PERL_VERSION) \
 			--build-arg YUM_URL=$(YUM_URL) \
 			--build-arg YUM_BASE=$(YUM_BASE) \
 			--build-arg GPG_URL=$(GPG_URL) \
@@ -57,7 +55,6 @@ build_docker.perl-lambda:
 			$(DOCKER_OPTS) \
 			--build-arg docker_registry=$(DOCKER_REGISTRY)/ \
 			--build-arg remote_docker_registry=$(REMOTE_DOCKER_REGISTRY) \
-			--build-arg perl_version=$(PERL_VERSION) \
 			--build-arg YUM_URL=$(YUM_URL) \
 			--build-arg YUM_BASE=$(YUM_BASE) \
 			--build-arg GPG_URL=$(GPG_URL) \

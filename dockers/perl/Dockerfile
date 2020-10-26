@@ -1,10 +1,12 @@
 ARG docker_registry
 ARG upstream_tag
-ARG perl_version
+ARG perl_version=5.32.0
 ARG remote_docker_registry
 
 # start new from the dev docker, copy /opt to /opt
 FROM ${docker_registry}perl:${perl_version}-dev-latest as dev-sb-perl
+
+ENV perl_version=${perl_version:-5.32.0}
 
 # cleanup cpan stuff
 RUN rm -rf /opt/tmp/cpan_local && rm -rf /opt/tmp && rm -rf /opt/perl
@@ -16,7 +18,8 @@ RUN mkdir /opt/tmp && chmod 1777 /opt/tmp
 FROM scratch
 COPY --from=dev-sb-perl /opt /opt
 
-ARG perl_version
+ENV perl_version=${perl_version:-5.32.0}
+
 MAINTAINER Tim Aerts <aardbeiplantje@gmail.com>
 
 # ENV variables, still set TMPDIR for File::Temp

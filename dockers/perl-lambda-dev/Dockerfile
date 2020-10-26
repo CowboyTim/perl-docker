@@ -1,12 +1,12 @@
 ARG docker_registry
 ARG upstream_tag
 ARG remote_docker_registry
-ARG perl_version
+ARG perl_version=5.32.0
 
 # we start this from the perl:<version>-dev-latest docker, so we have build tools
 FROM ${docker_registry}perl:${perl_version}-dev-latest as lambda-sb-perl
 
-ARG perl_version
+ENV perl_version=${perl_version:-5.32.0}
 
 MAINTAINER Tim Aerts <aardbeiplantje@gmail.com>
 

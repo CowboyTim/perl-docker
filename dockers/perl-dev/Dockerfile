@@ -157,9 +157,9 @@ COPY cpan_config.pl /opt
 
 # install CPAN modules for CPAN in INSTALL_BASE=/opt/tmp/cpan_local. This is
 # handled by cpan_config.pl. This is because we don't want cpan-needed modules
-# in Lambda, we can't do anything with those and they take up space. Best is to
-# look out for those while installing cpan modules that are needed, often they
-# bring in dependencies that aren't needed later on at runtime
+# in the end docker, we can't do anything with those and they take up space.
+# Best is to look out for those while installing cpan modules that are needed,
+# often they bring in dependencies that aren't needed later on at runtime
 RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  CPAN
 RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  YAML
 RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  ExtUtils::PkgConfig

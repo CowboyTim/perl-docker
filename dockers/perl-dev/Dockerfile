@@ -1,7 +1,22 @@
 ARG docker_registry
 ARG upstream_tag
-LABEL maintainer='Tim Aerts <aardbeiplantje@gmail.com>'
-FROM ${docker_registry}base-sandbox:latest as b-sb
+ARG remote_docker_registry
+
+# we start from Amazon Linux 2 with sources to build perl against, we also add
+# busybox. We do a COPY to "start fresh", just because we can't (yet?) overlay
+# multiple FROM dockers into 1 docker sadly enough
+FROM ${remote_docker_registry}amazonlinux:2-with-sources as base-image
+FROM ${remote_docker_registry}busybox:1.32.0             as busybox
+FROM scratch
+COPY --from=base-image / /
+COPY --from=busybox    /bin/busybox /
+
+ARG perl_version=5.32.0
+
+MAINTAINER Tim Aerts <aardbeiplantje@gmail.com>
+
+# base build stuff
+RUN yum install -y make gcc tar gzip pkgconfig man groff
 
 # needed for building PERL and possibly cpan stuff (note that they are not
 # included in the end perl-sandbox as they don't go in /opt)
@@ -26,7 +41,7 @@ RUN yum install -y   \
         patch
 
 # to be sure to have that
-ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/5.32.0/x86_64/CORE
+ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/$perl_version/x86_64/CORE
 
 # now we add OS dependencies from / to /opt, as later on we will be squashing
 # the docker fs by moving everything from /opt to / and abandon what's there
@@ -88,22 +103,25 @@ ENV PATH=/opt/bin:$PATH
 
 WORKDIR /opt/src/perl
 RUN \
-       curl -sSL -k --insecure https://www.cpan.org/src/5.0/perl-5.32.0.tar.xz -o perl-5.32.0.tar.xz \
-    && echo '6f436b447cf56d22464f980fac1916e707a040e96d52172984c5d184c09b859b *perl-5.32.0.tar.xz' | sha256sum -c - \
-    && tar --strip-components=1 -xaf perl-5.32.0.tar.xz -C /opt/src/perl \
-    && rm perl-5.32.0.tar.xz                                             \
-    && mv /bin/sh /bin/sh.b                                              \
-    && /opt/bin/sh                                                       \
-        ./Configure                                                      \
-        -Duse64bitall                                                    \
-        -Darchname=x86_64                                                \
-        -Duseshrplib                                                     \
-        -Dprefix=/opt/                                                   \
-        -Duselargefiles                                                  \
+       export perl_tar=perl-$perl_version.tar.xz;                                            \
+       echo   P:$perl_tar;                                                                   \
+       curl -sSL -k --insecure https://www.cpan.org/src/5.0/$perl_tar -o $perl_tar           \
+    && echo '6f436b447cf56d22464f980fac1916e707a040e96d52172984c5d184c09b859b *'${perl_tar}  \
+        |sha256sum -c -                                                                      \
+    && tar --strip-components=1 -xaf $perl_tar -C /opt/src/perl                              \
+    && rm $perl_tar                                                                          \
+    && mv /bin/sh /bin/sh.b                                                                  \
+    && /opt/bin/sh                                                                           \
+        ./Configure                                                                          \
+        -Duse64bitall                                                                        \
+        -Darchname=x86_64                                                                    \
+        -Duseshrplib                                                                         \
+        -Dprefix=/opt/                                                                       \
+        -Duselargefiles                                                                      \
         -Dldflags='-Wl,-R/opt/lib -Wl,-R/opt/lib64 -Wl,--dynamic-linker,/opt/lib64/ld-linux-x86-64.so.2' \
-        -des                                                             \
-    && make -j16                                                         \
-    && make -j16 install                                                 \
+        -des                                                                                 \
+    && make -j16                                                                             \
+    && make -j16 install                                                                     \
     && mv /bin/sh.b /bin/sh
 
 WORKDIR /

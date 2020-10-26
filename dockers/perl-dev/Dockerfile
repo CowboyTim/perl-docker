@@ -133,15 +133,15 @@ ENV PERL5LIB=\
 /opt/lib/perl5:\
 /opt/lib/perl5/site_perl:\
 /opt/lib/perl5/site_perl/auto:\
-/opt/lib/perl5/site_perl/5.32.0/:\
-/opt/lib/perl5/site_perl/5.32.0/auto:\
-/opt/lib/perl5/site_perl/5.32.0/x86_64:\
-/opt/lib/perl5/site_perl/5.32.0/x86_64/auto:\
+/opt/lib/perl5/site_perl/$perl_version/:\
+/opt/lib/perl5/site_perl/$perl_version/auto:\
+/opt/lib/perl5/site_perl/$perl_version/x86_64:\
+/opt/lib/perl5/site_perl/$perl_version/x86_64/auto:\
 /opt/lib/perl5/auto:\
-/opt/lib/perl5/5.32.0:\
-/opt/lib/perl5/5.32.0/auto:\
-/opt/lib/perl5/5.32.0/x86_64:\
-/opt/lib/perl5/5.32.0/x86_64/auto
+/opt/lib/perl5/$perl_version:\
+/opt/lib/perl5/$perl_version/auto:\
+/opt/lib/perl5/$perl_version/x86_64:\
+/opt/lib/perl5/$perl_version/x86_64/auto
 
 # cpan config
 COPY cpan_config.pl /opt

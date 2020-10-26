@@ -1,20 +1,21 @@
 #!/bin/sh
+PERL_VERSION=5.32.0
 PERL5LIB=$LAMBDA_TASK_ROOT/lib/perl
 PERL5LIB=\
 /opt/lib/perl5:\
 /opt/lib/perl5/site_perl:\
 /opt/lib/perl5/site_perl/auto:\
-/opt/lib/perl5/site_perl/5.32.0/:\
-/opt/lib/perl5/site_perl/5.32.0/auto:\
-/opt/lib/perl5/site_perl/5.32.0/x86_64:\
-/opt/lib/perl5/site_perl/5.32.0/x86_64/auto:\
+/opt/lib/perl5/site_perl/$PERL_VERSION/:\
+/opt/lib/perl5/site_perl/$PERL_VERSION/auto:\
+/opt/lib/perl5/site_perl/$PERL_VERSION/x86_64:\
+/opt/lib/perl5/site_perl/$PERL_VERSION/x86_64/auto:\
 /opt/lib/perl5/auto:\
-/opt/lib/perl5/5.32.0:\
-/opt/lib/perl5/5.32.0/auto:\
-/opt/lib/perl5/5.32.0/x86_64:\
-/opt/lib/perl5/5.32.0/x86_64/auto
+/opt/lib/perl5/$PERL_VERSION:\
+/opt/lib/perl5/$PERL_VERSION/auto:\
+/opt/lib/perl5/$PERL_VERSION/x86_64:\
+/opt/lib/perl5/$PERL_VERSION/x86_64/auto
 PATH=$LAMBDA_TASK_ROOT/bin:/opt/bin:$PATH
 LANG=C
 LD_LIBRARY_PATH=
-export PERL5LIB PATH LANG LD_LIBRARY_PATH
+export PERL5LIB PATH LANG LD_LIBRARY_PATH PERL_VERSION
 exec /opt/lib64/ld-linux-x86-64.so.2 /opt/bin/perl /opt/bootstrap.lambda.pl

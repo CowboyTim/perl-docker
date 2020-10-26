@@ -1,5 +1,7 @@
 ARG docker_registry
 ARG upstream_tag
+ARG remote_docker_registry
+ARG perl_version=5.32.0
 
 #
 # The PERL docker has everything in /opt, even the glibc. But nothing to build
@@ -9,11 +11,40 @@ ARG upstream_tag
 # Note that we can use other dockers to do this too
 #
 
-FROM ${docker_registry}perl-sandbox:latest    as lambda-sb-perl
-FROM ${docker_registry}base-sandbox:latest    as build-helper
+FROM ${docker_registry}perl:latest                         as lambda-sb-perl
+FROM ${remote_docker_registry}amazonlinux:2-with-sources   as build-helper
 FROM scratch
 COPY --from=build-helper    / /
 COPY --from=lambda-sb-perl  /opt /opt
+
+ARG perl_version=5.32.0
+
+MAINTAINER Tim Aerts <aardbeiplantje@gmail.com>
+
+# base build stuff
+RUN yum install -y make gcc tar gzip pkgconfig man groff
+
+# needed for building PERL and possibly cpan stuff (note that they are not
+# included in the end perl-sandbox as they don't go in /opt)
+RUN yum install -y   \
+        gdbm-devel   \
+        libdb-devel  \
+        gcc          \
+        make         \
+        tar          \
+        curl         \
+        xz           \
+        gzip         \
+        pkgconfig    \
+        wget         \
+        zip          \
+        less         \
+        bzip2        \
+        bash         \
+        ncurses-libs \
+        coreutils    \
+        findutils    \
+        patch
 
 # as the provided.al2 Amazon Linux 2 bootstrap lambda might be different then
 # the glibc in /opt/lib64 from the perl docker we remove the glibc we added and
@@ -22,7 +53,7 @@ COPY --from=lambda-sb-perl  /opt /opt
 # This won't work when we use e.g. CentOS 8, as this has a newer glibc version
 #RUN rm -rf /opt/lib64 && ln -s /lib64 /opt/lib64
 
-ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/5.32.0/x86_64/CORE
+ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/$perl_version/x86_64/CORE
 ENV PERL5LIB=\
 /opt/tmp/cpan_local/lib/perl5:\
 /opt/tmp/cpan_local/lib/perl5/auto:\
@@ -33,15 +64,15 @@ ENV PERL5LIB=\
 /opt/lib/perl5:\
 /opt/lib/perl5/site_perl:\
 /opt/lib/perl5/site_perl/auto:\
-/opt/lib/perl5/site_perl/5.32.0/:\
-/opt/lib/perl5/site_perl/5.32.0/auto:\
-/opt/lib/perl5/site_perl/5.32.0/x86_64:\
-/opt/lib/perl5/site_perl/5.32.0/x86_64/auto:\
+/opt/lib/perl5/site_perl/$perl_version/:\
+/opt/lib/perl5/site_perl/$perl_version/auto:\
+/opt/lib/perl5/site_perl/$perl_version/x86_64:\
+/opt/lib/perl5/site_perl/$perl_version/x86_64/auto:\
 /opt/lib/perl5/auto:\
-/opt/lib/perl5/5.32.0:\
-/opt/lib/perl5/5.32.0/auto:\
-/opt/lib/perl5/5.32.0/x86_64:\
-/opt/lib/perl5/5.32.0/x86_64/auto
+/opt/lib/perl5/$perl_version:\
+/opt/lib/perl5/$perl_version/auto:\
+/opt/lib/perl5/$perl_version/x86_64:\
+/opt/lib/perl5/$perl_version/x86_64/auto
 
 # install CPAN modules for CPAN in /opt/tmp/cpan_local. This is handled by
 # cpan_config.pl. This is because we don't want cpan-needed modules in Lambda,
@@ -104,6 +135,6 @@ RUN rm -rf /opt/cpan_config.pl
 RUN rm -rf /opt/scripts
 
 # docker specific, won't be used for the lambda zip
-ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/5.32.0/x86_64/CORE
+ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/$perl_version/x86_64/CORE
 ENTRYPOINT ["/opt/lib64/ld-linux-x86-64.so.2", "/opt/bin/perl"]
 CMD ["-e", "exec '/opt/bin/busybox', 'sh'"]

@@ -146,9 +146,6 @@ ENV PERL5LIB=\
 # cpan config
 COPY cpan_config.pl /opt
 
-# our test script
-COPY test_core_modules.pl /opt/scripts/
-
 # cleanup stuff in /opt we never will need
 RUN    rm -rf /opt/src                \
     && rm -rf /opt/share              \

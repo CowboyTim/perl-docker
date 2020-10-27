@@ -1,7 +1,9 @@
-REMOTE_DOCKER_REGISTRY     ?= docker_build_$(USER)
+DOCKER_LOCAL               ?= docker_build_$(USER)
+DOCKER_REPO                ?= $(DOCKER_LOCAL)
 DOCKER_REGISTRY            ?= aardbeiplantje
-DOCKER_REPOSITORY          ?= $(REMOTE_DOCKER_REGISTRY)/$(DOCKER_REGISTRY)
-REMOTE_DOCKER_REPOSITORY   ?= $(DOCKER_REGISTRY)
+REMOTE_DOCKER_REGISTRY     ?= $(DOCKER_LOCAL)
+DOCKER_REPOSITORY          ?= $(DOCKER_LOCAL)/$(DOCKER_REGISTRY)
+REMOTE_DOCKER_PUSH         ?= $(DOCKER_REGISTRY)
 DOCKER_IMAGE_TAG           ?= dev
 YUM_BASE                   ?=
 YUM_URL                    ?= file:///
@@ -68,10 +70,14 @@ docker_tag_perl:
 		&& docker tag $(DOCKER_REPOSITORY)/perl:latest $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-latest
 
 docker_push_perl:
-		   docker tag $(DOCKER_REPOSITORY)/perl:latest $(REMOTE_DOCKER_REPOSITORY)/perl:$(PERL_VERSION) \
-		&& docker tag $(DOCKER_REPOSITORY)/perl:latest $(REMOTE_DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-latest \
-		&& docker tag $(DOCKER_REPOSITORY)/perl:latest $(REMOTE_DOCKER_REPOSITORY)/perl:latest \
-		&& docker tag $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-dev-latest $(REMOTE_DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-dev-latest
+		   docker tag $(DOCKER_REPOSITORY)/perl:latest $(REMOTE_DOCKER_PUSH)/perl:$(PERL_VERSION) \
+		&& docker tag $(DOCKER_REPOSITORY)/perl:latest $(REMOTE_DOCKER_PUSH)/perl:$(PERL_VERSION)-latest \
+		&& docker tag $(DOCKER_REPOSITORY)/perl:latest $(REMOTE_DOCKER_PUSH)/perl:latest \
+		&& docker tag $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-dev-latest $(REMOTE_DOCKER_PUSH)/perl:$(PERL_VERSION)-dev-latest \
+		&& docker push $(REMOTE_DOCKER_PUSH)/perl:$(PERL_VERSION) \
+		&& docker push $(REMOTE_DOCKER_PUSH)/perl:$(PERL_VERSION)-latest \
+		&& docker push $(REMOTE_DOCKER_PUSH)/perl:latest \
+		&& docker push $(REMOTE_DOCKER_PUSH)/perl:$(PERL_VERSION)-dev-latest
 
 save_lambda_docker.perl-lambda: perl_docker build_docker.perl-lambda-dev build_docker.perl-lambda docker_prune
 		cd $(TMPDIR)/tmpdist/ && (docker save $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-lambda-latest \

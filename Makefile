@@ -1,6 +1,7 @@
-DOCKER_REGISTRY            ?= docker_build_$(USER)
-REMOTEDOCKER_REGISTRY      ?=
-DOCKER_REPOSITORY          ?= $(DOCKER_REGISTRY)/thuisdockers
+REMOTE_DOCKER_REGISTRY     ?= docker_build_$(USER)
+DOCKER_REGISTRY            ?= aardbeiplantje
+DOCKER_REPOSITORY          ?= $(REMOTE_DOCKER_REGISTRY)/$(DOCKER_REGISTRY)
+REMOTE_DOCKER_REPOSITORY   ?= $(DOCKER_REGISTRY)
 DOCKER_IMAGE_TAG           ?= dev
 YUM_BASE                   ?=
 YUM_URL                    ?= file:///
@@ -23,13 +24,13 @@ build_docker.perl-dev:
 			-f ./dockers/perl-dev/Dockerfile \
 			--network host \
 			$(DOCKER_OPTS) \
-			--build-arg docker_registry=$(DOCKER_REGISTRY)/ \
-			--build-arg remote_docker_registry=$(REMOTE_DOCKER_REGISTRY) \
+			--build-arg docker_registry=$(DOCKER_REGISTRY) \
+			--build-arg remote_docker_registry=$(REMOTE_DOCKER_REGISTRY)/ \
 			--build-arg YUM_URL=$(YUM_URL) \
 			--build-arg YUM_BASE=$(YUM_BASE) \
 			--build-arg GPG_URL=$(GPG_URL) \
-			--cache-from $(DOCKER_REGISTRY)/perl:$(PERL_VERSION)-dev-latest \
-			--tag $(DOCKER_REGISTRY)/perl:$(PERL_VERSION)-dev-latest \
+			--cache-from $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-dev-latest \
+			--tag $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-dev-latest \
 			$(EXTRA_DOCKER_OPTS)
 
 build_docker.perl-lambda-dev:
@@ -38,13 +39,13 @@ build_docker.perl-lambda-dev:
 			-f ./dockers/perl-lambda-dev/Dockerfile \
 			--network host \
 			$(DOCKER_OPTS) \
-			--build-arg docker_registry=$(DOCKER_REGISTRY)/ \
-			--build-arg remote_docker_registry=$(REMOTE_DOCKER_REGISTRY) \
+			--build-arg docker_registry=$(DOCKER_REGISTRY) \
+			--build-arg remote_docker_registry=$(REMOTE_DOCKER_REGISTRY)/ \
 			--build-arg YUM_URL=$(YUM_URL) \
 			--build-arg YUM_BASE=$(YUM_BASE) \
 			--build-arg GPG_URL=$(GPG_URL) \
-			--cache-from $(DOCKER_REGISTRY)/perl:$(PERL_VERSION)-lambda-dev-latest \
-			--tag $(DOCKER_REGISTRY)/perl:$(PERL_VERSION)-lambda-dev-latest \
+			--cache-from $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-lambda-dev-latest \
+			--tag $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-lambda-dev-latest \
 			$(EXTRA_DOCKER_OPTS)
 
 build_docker.perl-lambda:
@@ -53,21 +54,25 @@ build_docker.perl-lambda:
 			-f ./dockers/perl-lambda/Dockerfile \
 			--network host \
 			$(DOCKER_OPTS) \
-			--build-arg docker_registry=$(DOCKER_REGISTRY)/ \
-			--build-arg remote_docker_registry=$(REMOTE_DOCKER_REGISTRY) \
+			--build-arg docker_registry=$(DOCKER_REGISTRY) \
+			--build-arg remote_docker_registry=$(REMOTE_DOCKER_REGISTRY)/ \
 			--build-arg YUM_URL=$(YUM_URL) \
 			--build-arg YUM_BASE=$(YUM_BASE) \
 			--build-arg GPG_URL=$(GPG_URL) \
-			--cache-from $(DOCKER_REGISTRY)/perl:$(PERL_VERSION)-lambda-latest \
-			--tag $(DOCKER_REGISTRY)/perl:$(PERL_VERSION)-lambda-latest \
+			--cache-from $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-lambda-latest \
+			--tag $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-lambda-latest \
 			$(EXTRA_DOCKER_OPTS)
 
 docker_tag_perl:
-		docker tag $(DOCKER_REGISTRY)/perl:latest $(DOCKER_REGISTRY)/perl:$(PERL_VERSION) && \
-		docker tag $(DOCKER_REGISTRY)/perl:latest $(DOCKER_REGISTRY)/perl:$(PERL_VERSION)-latest
+		   docker tag $(DOCKER_REPOSITORY)/perl:latest $(REMOTE_DOCKER_REPOSITORY)/perl:$(PERL_VERSION) \
+		&& docker tag $(DOCKER_REPOSITORY)/perl:latest $(REMOTE_DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-latest \
+		&& docker tag $(DOCKER_REPOSITORY)/perl:latest $(REMOTE_DOCKER_REPOSITORY)/perl:latest \
+		&& docker tag $(DOCKER_REPOSITORY)/perl:latest $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION) \
+		&& docker tag $(DOCKER_REPOSITORY)/perl:latest $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-latest \
+		&& docker tag $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-dev-latest $(REMOTE_DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-dev-latest
 
 save_lambda_docker.perl-lambda: perl_docker build_docker.perl-lambda-dev build_docker.perl-lambda docker_prune
-		cd $(TMPDIR)/tmpdist/ && (docker save $(DOCKER_REGISTRY)/perl:$(PERL_VERSION)-lambda-latest \
+		cd $(TMPDIR)/tmpdist/ && (docker save $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-lambda-latest \
 				|tar xfO - --wildcards '*/layer.tar'|tar xf -) \
 		&& chmod -R +w $(TMPDIR)/tmpdist/
 
@@ -81,8 +86,6 @@ publish_aws_lambda_layer_runtime_zip:
 				--license-info "MIT" \
 				--compatible-runtimes provided.al2 \
 				--zip-file fileb://$(TMPDIR)/dist/perl-lambda-runtime.zip
-
-publish_new_runtime: clean mkdist copy_bootstrap docker_save.perl aws_lambda_layer_runtime_zip publish_aws_lambda_layer_runtime_zip
 
 copy_bootstrap:
 		cp dockers/perl-lambda/bootstrap.lambda.pl dockers/perl-lambda/bootstrap $(TMPDIR)/tmpdist/ && chmod +x $(TMPDIR)/tmpdist/bootstrap*
@@ -109,14 +112,14 @@ build_docker.%:
 			-f ./dockers/$*/Dockerfile \
 			--network host \
 			$(DOCKER_OPTS) \
-			--build-arg docker_registry=$(DOCKER_REGISTRY)/ \
-			--build-arg remote_docker_registry=$(REMOTE_DOCKER_REGISTRY) \
+			--build-arg docker_registry=$(DOCKER_REGISTRY) \
+			--build-arg remote_docker_registry=$(REMOTE_DOCKER_REGISTRY)/ \
 			--build-arg perl_version=$(PERL_VERSION) \
 			--build-arg YUM_URL=$(YUM_URL) \
 			--build-arg YUM_BASE=$(YUM_BASE) \
 			--build-arg GPG_URL=$(GPG_URL) \
-			--cache-from $(DOCKER_REGISTRY)/$*:latest \
-			--tag $(DOCKER_REGISTRY)/$*:latest \
+			--cache-from $(DOCKER_REPOSITORY)/$*:latest \
+			--tag $(DOCKER_REPOSITORY)/$*:latest \
 			$(EXTRA_DOCKER_OPTS)
 
 docker_save.%: mkdist

@@ -3,7 +3,7 @@ ARG upstream_tag
 ARG remote_docker_registry
 ARG perl_version=5.32.0
 
-FROM ${docker_registry}perl:${perl_version}-lambda-dev-latest as prl
+FROM ${remote_docker_registry}${docker_registry}/perl:${perl_version}-lambda-dev-latest as prl
 FROM scratch
 
 ENV perl_version=${perl_version:-5.32.0}

@@ -1,13 +1,13 @@
 ARG docker_registry
 ARG upstream_tag
-ARG perl_version=5.32.0
 ARG remote_docker_registry
+ARG perl_version=5.32.0
 
 # we start from Amazon Linux 2 with sources to build perl against, we also add
 # busybox. We do a COPY to "start fresh", just because we can't (yet?) overlay
 # multiple FROM dockers into 1 docker sadly enough
-FROM ${remote_docker_registry}amazonlinux:2-with-sources as base-image
-FROM ${remote_docker_registry}busybox:1.32.0             as busybox
+FROM amazonlinux:2-with-sources as base-image
+FROM busybox:1.32.0             as busybox
 FROM scratch
 COPY --from=base-image / /
 COPY --from=busybox    /bin/busybox /

@@ -64,11 +64,13 @@ build_docker.perl-lambda:
 			$(EXTRA_DOCKER_OPTS)
 
 docker_tag_perl:
+		   docker tag $(DOCKER_REPOSITORY)/perl:latest $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION) \
+		&& docker tag $(DOCKER_REPOSITORY)/perl:latest $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-latest
+
+docker_push_perl:
 		   docker tag $(DOCKER_REPOSITORY)/perl:latest $(REMOTE_DOCKER_REPOSITORY)/perl:$(PERL_VERSION) \
 		&& docker tag $(DOCKER_REPOSITORY)/perl:latest $(REMOTE_DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-latest \
 		&& docker tag $(DOCKER_REPOSITORY)/perl:latest $(REMOTE_DOCKER_REPOSITORY)/perl:latest \
-		&& docker tag $(DOCKER_REPOSITORY)/perl:latest $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION) \
-		&& docker tag $(DOCKER_REPOSITORY)/perl:latest $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-latest \
 		&& docker tag $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-dev-latest $(REMOTE_DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-dev-latest
 
 save_lambda_docker.perl-lambda: perl_docker build_docker.perl-lambda-dev build_docker.perl-lambda docker_prune

@@ -10,7 +10,8 @@ The operating system perl was built against is not part of this docker,
 instead, the glibc version is compied to /opt/lib64. This has a couple of
 advantages and disadvantages:
 
-* the size is very small and to the point: ~120MB
+* the size is very small and to the point: ~60MB
+* size can be reduced even more for pure runtime perl dockers: ~34MB
 * only 1 perl in the docker image
 * you can't add cpan modules in the docker itself
 
@@ -37,11 +38,16 @@ Similar, other tools can be run like this:
 
 # Images
 
-runtime:
+full runtime:
 * aardbeiplantje/perl:5.32.0
 * aardbeiplantje/perl:5.32.0-latest
 * aardbeiplantje/perl:latest
 
-dev:
+full dev (~1GB):
 * aardbeiplantje/5.32.0-dev-latest
+
+# TODO
+
+* make a trimmed runtime, although this is usually up to the needs of the project
+
 

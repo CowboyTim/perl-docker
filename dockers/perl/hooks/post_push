@@ -1,0 +1,13 @@
+#!/bin/bash
+
+DOCKER_REPO=aardbeiplantje/perl
+IMAGE_NAME=${IMAGE_NAME:-${DOCKER_REPO}:5.32.0}
+
+tags='latest 5.32.0-latest'
+for tag in $tags; do
+    tgt="${DOCKER_REPO}:${tag}"
+    echo "TAG $IMAGE_NAME for $tgt"
+    docker tag $IMAGE_NAME $tgt
+    echo "PUSH $IMAGE_NAME for $tgt"
+    docker push $tgt
+done

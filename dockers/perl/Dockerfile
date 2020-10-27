@@ -4,7 +4,7 @@ ARG perl_version=5.32.0
 ARG remote_docker_registry
 
 # start new from the dev docker, copy /opt to /opt
-FROM ${docker_registry}perl:${perl_version}-dev-latest as dev-sb-perl
+FROM ${remote_docker_registry}aardbeiplantje/perl:${perl_version}-dev-latest as dev-sb-perl
 
 ENV perl_version=${perl_version:-5.32.0}
 

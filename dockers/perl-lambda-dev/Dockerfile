@@ -1,4 +1,4 @@
-ARG docker_registry
+ARG docker_registry=aardbeiplantje
 ARG upstream_tag
 ARG remote_docker_registry
 ARG perl_version=5.32.0

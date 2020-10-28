@@ -6,7 +6,7 @@ This perl is built to be used just as a docker that only contains perl. The
 perl distribution is installed in /opt and is a vanilla perl install. All bin
 scripts and binaries within a typical perl distribution are installed.
 
-The operating system perl was built against is not part of this docker,
+The operating system this perl was built against is not part of this docker,
 instead, the glibc version is compied to /opt/lib64. This has a couple of
 advantages and disadvantages:
 
@@ -15,26 +15,36 @@ advantages and disadvantages:
 * only 1 perl in the docker image
 * you can't add cpan modules in the docker itself
 
-This can easily be fixed by making a new docker where you combine this with the
-original OS and add cpan modules again. Currently, Amnazon Linux 2 was used to
-do this.
+The restriction of cpan building can easily be fixed by making a new docker
+where you combine this with the original OS and add cpan modules again. This is
+probably even the normal case, as one will use this perl docker as a base to
+create new dockers with the tools needed to run the application, and this isn't
+limited to perl and cpan, but can as well be unix tools and other languages.
+
+Currently, Amazon Linux 2 was used to make this build.
 
 The perl distribution also contains busybox from the busybox docker and
 installed symlinks in /opt/bin. This is needed as e.g. /opt/bin/sh and
 /opt/bin/less is used by perldoc to show documentation.
 
-The default entrypoint/env is set up to use perl, but when no arguments are
-given, a /opt/bin/sh is exec'ed so you enter the busybox shell.
-
 # Quick reference
 
 You can use this perl docker like this:
 
-  `$ docker run -it --rm aardbeiplantje/perl:5.32.0 -MConfig -we 'print $Config{version}."\n"'`
+  `$ docker run -it --rm aardbeiplantje/perl -MConfig -we 'print $Config{version}."\n"'`
 
 Similar, other tools can be run like this:
 
-  `$ docker run -it --rm aardbeiplantje/perl:5.32.0 /opt/bin/perldoc POSIX`
+  `$ docker run -it --rm aardbeiplantje/perl -e 'exec @ARGV' perldoc -f sysopen`
+
+You can start perl interactively just like perl:
+
+  `$ docker run -it --rm aardbeiplantje/perl -e 'exec @ARGV' sh`
+
+Or, as busybox is installed in /opt/bin, and /opt/bin is in the PATH, you can
+for instance list what's in the docker:
+
+  `$ docker run -it --rm aardbeiplantje/perl -e 'exec @ARGV' find / -xdev`
 
 # Images
 

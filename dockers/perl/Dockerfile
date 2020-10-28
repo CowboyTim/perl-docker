@@ -41,4 +41,4 @@ ENV TMPDIR=/opt/tmp
 
 # entrypoint + cmd, default to exec of /bin/sh
 ENTRYPOINT ["/opt/lib64/ld-linux-x86-64.so.2", "/opt/bin/perl"]
-CMD ["-e", "exec '/opt/bin/busybox', 'sh'"]
+#CMD ["-e", "exec '/opt/bin/busybox', 'sh'"]

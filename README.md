@@ -27,6 +27,29 @@ The perl distribution also contains busybox from the busybox docker and
 installed symlinks in /opt/bin. This is needed as e.g. /opt/bin/sh and
 /opt/bin/less is used by perldoc to show documentation.
 
+# Environment variables
+
+These are the environment variables defined within the docker by default to
+help running scripts:
+
+* `PATH=/opt/bin:/opt/scripts:$PATH`
+* `LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/5.32.0/x86_64/CORE`
+* `PERL_VERSION=5.32.0`
+* `TMPDIR=/opt/tmp`
+* `PERL5LIB=\
+    /opt/lib/perl5:\
+    /opt/lib/perl5/site_perl:\
+    /opt/lib/perl5/site_perl/auto:\
+    /opt/lib/perl5/site_perl/5.32.0/:\
+    /opt/lib/perl5/site_perl/5.32.0/auto:\
+    /opt/lib/perl5/site_perl/5.32.0/x86_64:\
+    /opt/lib/perl5/site_perl/5.32.0/x86_64/auto:\
+    /opt/lib/perl5/auto:\
+    /opt/lib/perl5/5.32.0:\
+    /opt/lib/perl5/5.32.0/auto:\
+    /opt/lib/perl5/5.32.0/x86_64:\
+    /opt/lib/perl5/5.32.0/x86_64/auto`
+
 # Quick reference
 
 You can use this perl docker like this:
@@ -46,6 +69,14 @@ for instance list what's in the docker:
 
   `$ docker run -it --rm aardbeiplantje/perl -e 'exec @ARGV' find / -xdev`
 
+To run external scripts, for instance:
+
+  `$ docker run -i --rm aardbeiplantje/perl < ./hello_world.pl
+
+Or:
+
+  `$ docker run -it --rm -v $PWD:/opt/scripts aardbeiplantje/perl /opt/scripts/hello_world.pl
+
 # Images
 
 full runtime:
@@ -55,6 +86,30 @@ full runtime:
 
 full dev (~1GB):
 * aardbeiplantje/5.32.0-dev-latest
+
+# Building
+
+To build the perl docker locally, you need to have docker set up on your host.
+There's an easy to use Makefile with the default target to build the perl-dev
+docker image and then the perl docker image:
+
+  `$ make`
+
+You can push the docker to your repository after that - note that you might
+need to login first of course:
+
+  `$ export REMOTE_DOCKER_PUSH=<docker_registry_hostname>/aardbeiplantje`
+  `$ make docker_push_perl`
+
+If the REMOTE_DOCKER_PUSH environment variable isn't set, default the push is
+to docker hub.
+
+# Extending the docker image
+
+The docker image can be extened with other tools that you might need. Easiest
+is to start from the aardbeiplantje/perl:5.32.0-dev-latest image as the CPAN
+config is already present. Most of the build utilities typically needed on a
+linux OS are also already preinstalled: make, gcc, tar, gzip,..
 
 # TODO
 

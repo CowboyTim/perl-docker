@@ -1,0 +1,6 @@
+#!/bin/bash
+
+url="$TRIGGER_PERL_BUILD"
+curl -sS -k -XPOST $url \
+    --data '{"docker_tag":"5.32.0"}' \
+    -H 'Content-Type: application/json'

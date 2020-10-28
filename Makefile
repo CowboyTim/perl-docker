@@ -10,15 +10,12 @@ YUM_URL                    ?= file:///
 GPG_URL                    ?= file:///
 TMPDIR                     ?= /tmp/tmp_$(USER)
 PERL_VERSION               ?= 5.32.0
-PERL_AWS_LAMBDA_LAYER      ?= perl-5_32_0-runtime
 
 all: perl_docker
 
 .PHONY: perl_docker
 
 perl_docker: build_docker.perl-dev build_docker.perl docker_tag_perl docker_prune
-
-deploy: aws_lambda_layer_runtime_zip publish_aws_lambda_layer_runtime_zip
 
 build_docker.perl-dev:
 		docker build \
@@ -35,36 +32,6 @@ build_docker.perl-dev:
 			--tag $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-dev-latest \
 			$(EXTRA_DOCKER_OPTS)
 
-build_docker.perl-lambda-dev:
-		docker build \
-			./dockers/perl-lambda-dev \
-			-f ./dockers/perl-lambda-dev/Dockerfile \
-			--network host \
-			$(DOCKER_OPTS) \
-			--build-arg docker_registry=$(DOCKER_REGISTRY) \
-			--build-arg remote_docker_registry=$(REMOTE_DOCKER_REGISTRY)/ \
-			--build-arg YUM_URL=$(YUM_URL) \
-			--build-arg YUM_BASE=$(YUM_BASE) \
-			--build-arg GPG_URL=$(GPG_URL) \
-			--cache-from $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-lambda-dev-latest \
-			--tag $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-lambda-dev-latest \
-			$(EXTRA_DOCKER_OPTS)
-
-build_docker.perl-lambda:
-		docker build \
-			./dockers/perl-lambda \
-			-f ./dockers/perl-lambda/Dockerfile \
-			--network host \
-			$(DOCKER_OPTS) \
-			--build-arg docker_registry=$(DOCKER_REGISTRY) \
-			--build-arg remote_docker_registry=$(REMOTE_DOCKER_REGISTRY)/ \
-			--build-arg YUM_URL=$(YUM_URL) \
-			--build-arg YUM_BASE=$(YUM_BASE) \
-			--build-arg GPG_URL=$(GPG_URL) \
-			--cache-from $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-lambda-latest \
-			--tag $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-lambda-latest \
-			$(EXTRA_DOCKER_OPTS)
-
 docker_tag_perl:
 		   docker tag $(DOCKER_REPOSITORY)/perl:latest $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION) \
 		&& docker tag $(DOCKER_REPOSITORY)/perl:latest $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-latest
@@ -78,25 +45,6 @@ docker_push_perl:
 		&& docker push $(REMOTE_DOCKER_PUSH)/perl:$(PERL_VERSION)-latest \
 		&& docker push $(REMOTE_DOCKER_PUSH)/perl:latest \
 		&& docker push $(REMOTE_DOCKER_PUSH)/perl:$(PERL_VERSION)-dev-latest
-
-save_lambda_docker.perl-lambda: perl_docker build_docker.perl-lambda-dev build_docker.perl-lambda docker_prune
-		cd $(TMPDIR)/tmpdist/ && (docker save $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-lambda-latest \
-				|tar xfO - --wildcards '*/layer.tar'|tar xf -) \
-		&& chmod -R +w $(TMPDIR)/tmpdist/
-
-aws_lambda_layer_runtime_zip: mkdist copy_bootstrap save_lambda_docker.perl-lambda
-		cd $(TMPDIR)/tmpdist/ && zip -r --symlinks $(TMPDIR)/dist/perl-lambda-runtime.zip *
-
-publish_aws_lambda_layer_runtime_zip:
-		aws lambda publish-layer-version \
-				--layer-name $(PERL_AWS_LAMBDA_LAYER) \
-				--description 'This is the PERL $(PERL_VERSION) Lambda runtime' \
-				--license-info "MIT" \
-				--compatible-runtimes provided.al2 \
-				--zip-file fileb://$(TMPDIR)/dist/perl-lambda-runtime.zip
-
-copy_bootstrap:
-		cp dockers/perl-lambda/bootstrap.lambda.pl dockers/perl-lambda/bootstrap $(TMPDIR)/tmpdist/ && chmod +x $(TMPDIR)/tmpdist/bootstrap*
 
 docker_prune:
 		docker image prune -f

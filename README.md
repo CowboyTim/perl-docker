@@ -71,11 +71,11 @@ for instance list what's in the docker:
 
 To run external scripts, for instance:
 
-  `$ docker run -i --rm aardbeiplantje/perl < ./hello_world.pl
+  `$ docker run -i --rm aardbeiplantje/perl < ./hello_world.pl`
 
 Or:
 
-  `$ docker run -it --rm -v $PWD:/opt/scripts aardbeiplantje/perl /opt/scripts/hello_world.pl
+  `$ docker run -it --rm -v $PWD:/opt/scripts aardbeiplantje/perl /opt/scripts/hello_world.pl`
 
 # Images
 

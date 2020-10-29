@@ -127,16 +127,17 @@ docker_prune:
 		docker image prune -f
 
 mkdist: clean
-		mkdir -p $(TMPDIR)/dist/ $(TMPDIR)/tmpdist/
+		@mkdir -p $(TMPDIR)/dist/ $(TMPDIR)/tmpdist/ ./dist
 
 clean: cleandist cleantmpdist
-		if [ -d ./dist/ ]; then chmod -R +w ./dist/; rm -rf ./dist/; fi
+		@if [ -d ./dist/ ]; then chmod -R +w ./dist/; rm -rf ./dist/; fi
+		@if [ -d $(TMPDIR) ]; then rmdir $(TMPDIR) 2>/dev/null; fi
 
 cleandist:
-		if [ -d $(TMPDIR)/dist/ ]; then chmod -R +w $(TMPDIR)/dist/; rm -rf $(TMPDIR)/dist/; fi
+		@if [ -d $(TMPDIR)/dist/ ]; then chmod -R +w $(TMPDIR)/dist/; rm -rf $(TMPDIR)/dist/; fi
 
 cleantmpdist:
-		if [ -d $(TMPDIR)/tmpdist/ ]; then chmod -R +w $(TMPDIR)/tmpdist/; rm -rf $(TMPDIR)/tmpdist/; fi
+		@if [ -d $(TMPDIR)/tmpdist/ ]; then chmod -R +w $(TMPDIR)/tmpdist/; rm -rf $(TMPDIR)/tmpdist/; fi
 
 
 # general

@@ -4,6 +4,32 @@ ARG remote_docker_registry
 ARG perl_version=5.32.0
 
 FROM ${remote_docker_registry}${docker_registry}/perl:${perl_version}-lambda-dev-latest as prl
+# things we never will need for an AWS Lambda (or, if needed, can be adde. for
+# instance to make a cpan build system with lambda .. or so)
+RUN rm -rf /opt/lib/perl5/*/CPAN
+RUN rm -rf /opt/lib/perl5/*/ExtUtils
+RUN rm -rf /opt/lib/perl5/*/Pod
+RUN rm -rf /opt/lib/perl5/*/TAP
+RUN rm -rf /opt/lib/perl5/*/pod
+RUN rm -rf /opt/share
+RUN rm -rf /opt/man
+
+# remove the cpan cache
+RUN rm -rf /opt/perl/cpan && rmdir /opt/perl
+
+# unicode/unicore
+RUN rm -rf /opt/lib/perl5/*/unicore
+RUN rm -rf /opt/lib/perl5/*/Unicode/Collate
+
+# cleanup now
+RUN find /opt/lib/perl5/ -type f -name '.packlist'|xargs rm
+RUN find /opt/lib/perl5/ -type f -name '*.pod'    |xargs rm
+RUN find /opt/lib/perl5/ -type f -name '*.h'      |xargs rm
+RUN rm -rf /opt/tmp
+RUN rm -rf /opt/cpan_config.pl
+RUN rm -rf /opt/scripts
+
+# start new
 FROM scratch
 
 ENV perl_version=${perl_version:-5.32.0}

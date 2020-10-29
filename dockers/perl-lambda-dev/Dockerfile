@@ -68,31 +68,6 @@ ENV PERL5LIB=\
 RUN INSTALL_BASE=/opt /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -fTi common::sense
 RUN INSTALL_BASE=/opt /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -fTi JSON::XS
 
-# things we never will need for an AWS Lambda (or, if needed, can be adde. for
-# instance to make a cpan build system with lambda .. or so)
-RUN rm -rf /opt/lib/perl5/*/CPAN
-RUN rm -rf /opt/lib/perl5/*/ExtUtils
-RUN rm -rf /opt/lib/perl5/*/Pod
-RUN rm -rf /opt/lib/perl5/*/TAP
-RUN rm -rf /opt/lib/perl5/*/pod
-RUN rm -rf /opt/share
-RUN rm -rf /opt/man
-
-# remove the cpan cache
-RUN rm -rf /opt/perl/cpan && rmdir /opt/perl
-
-# unicode/unicore
-RUN rm -rf /opt/lib/perl5/*/unicore
-RUN rm -rf /opt/lib/perl5/*/Unicode/Collate
-
-# cleanup now
-RUN find /opt/lib/perl5/ -type f -name '.packlist'|xargs rm
-RUN find /opt/lib/perl5/ -type f -name '*.pod'    |xargs rm
-RUN find /opt/lib/perl5/ -type f -name '*.h'      |xargs rm
-RUN rm -rf /opt/tmp
-RUN rm -rf /opt/cpan_config.pl
-RUN rm -rf /opt/scripts
-
 # docker specific, won't be used for the lambda zip
 ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/$perl_version/x86_64/CORE
 ENTRYPOINT ["/opt/lib64/ld-linux-x86-64.so.2", "/opt/bin/perl"]

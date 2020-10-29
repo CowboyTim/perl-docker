@@ -15,7 +15,6 @@ perl_docker: build_docker.perl-dev build_docker.perl docker_tag_perl docker_prun
 
 publishlambda: publish_aws_lambda_layer_runtime_zip
 lambda: build_docker.perl-dev aws_lambda_layer_runtime_zip
-		@echo lambda zip is made in `pwd`/dist/perl-lambda-runtime-$(PERL_VERSION).zip
 
 build_docker.perl-dev:
 		docker build \
@@ -102,7 +101,8 @@ aws_lambda_layer_runtime_zip: mkdist copy_bootstrap save_lambda_docker.perl-lamb
 		&& rm -rf dist/ \
 		&& mkdir dist/ \
 		&& mv $(TMPDIR)/dist/perl-lambda-runtime.zip ./dist/perl-lambda-runtime-$(PERL_VERSION).zip \
-		&& rm -rf $(TMPDIR)/tmpdist/
+		&& rm -rf $(TMPDIR)/tmpdist/ \
+		&& echo lambda zip is made in `pwd`/dist/perl-lambda-runtime-$(PERL_VERSION).zip
 
 publish_aws_lambda_layer_runtime_zip:
 		aws lambda publish-layer-version \

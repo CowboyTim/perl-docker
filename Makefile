@@ -109,6 +109,7 @@ mkdist: clean
 		mkdir -p $(TMPDIR)/dist/ $(TMPDIR)/tmpdist/
 
 clean: cleandist cleantmpdist
+		if [ -d ./dist/ ]; then chmod -R +w ./dist/; rm -rf ./dist/; fi
 
 cleandist:
 		if [ -d $(TMPDIR)/dist/ ]; then chmod -R +w $(TMPDIR)/dist/; rm -rf $(TMPDIR)/dist/; fi

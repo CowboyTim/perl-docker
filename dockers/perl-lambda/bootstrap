@@ -19,7 +19,7 @@ PERL5LIB=\
 /opt/lib/perl5/$PERL_VERSION/x86_64/auto
 
 # set an easy PATH
-PATH=$LAMBDA_TASK_ROOT/bin:/opt/bin:$PATH
+PATH=$LAMBDA_TASK_ROOT/bin:/opt/bin:/opt/scripts:$PATH
 
 # we don't have locales, but perl complains, hence set it to 'C'
 LANG=C

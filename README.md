@@ -52,9 +52,9 @@ the lambda zip layer image:
 
     $ make
 
-This will build perl:5.32-dev-latest, perl:lambda-dev, perl:lambda docker and
-then extracts the files for zipping. We add the bootstrap logic in the zip
-before zipping.
+This will build perl:5.32-dev-latest, perl:5.32.0-lambda-dev-latest,
+perl:5.32.0-lambda-latest docker and then extracts the files for zipping. We
+add the bootstrap logic in the zip before zipping.
 
 You can later on publish the new layer to AWS via either console, aws cli,
 terraform, etc. There's a make target to do this via plain aws cli, you will

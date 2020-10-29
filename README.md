@@ -41,28 +41,28 @@ help running scripts:
 
 You can use this perl docker like this:
 
-  `$ docker run -it --rm aardbeiplantje/perl -MConfig -we 'print $Config{version}."\n"'`
+    $ docker run -it --rm aardbeiplantje/perl -MConfig -we 'print $Config{version}."\n"'
 
 Similar, other tools can be run like this:
 
-  `$ docker run -it --rm aardbeiplantje/perl -e 'exec @ARGV' perldoc -f sysopen`
+    $ docker run -it --rm aardbeiplantje/perl -e 'exec @ARGV' perldoc -f sysopen
 
 You can start perl interactively just like perl:
 
-  `$ docker run -it --rm aardbeiplantje/perl -e 'exec @ARGV' sh`
+    $ docker run -it --rm aardbeiplantje/perl -e 'exec @ARGV' sh
 
 Or, as busybox is installed in /opt/bin, and /opt/bin is in the PATH, you can
 for instance list what's in the docker:
 
-  `$ docker run -it --rm aardbeiplantje/perl -e 'exec @ARGV' find / -xdev`
+    $ docker run -it --rm aardbeiplantje/perl -e 'exec @ARGV' find / -xdev
 
 To run external scripts, for instance:
 
-  `$ docker run -i --rm aardbeiplantje/perl < ./hello_world.pl`
+    $ docker run -i --rm aardbeiplantje/perl < ./hello_world.pl
 
 Or:
 
-  `$ docker run -it --rm -v $PWD:/opt/scripts aardbeiplantje/perl /opt/scripts/hello_world.pl`
+    $ docker run -it --rm -v $PWD:/opt/scripts aardbeiplantje/perl /opt/scripts/hello_world.pl
 
 # Images
 
@@ -80,13 +80,13 @@ To build the perl docker locally, you need to have docker set up on your host.
 There's an easy to use Makefile with the default target to build the perl-dev
 docker image and then the perl docker image:
 
-  `$ make`
+    $ make
 
 You can push the docker to your repository after that - note that you might
 need to login first of course:
 
-  `$ export REMOTE_DOCKER_PUSH=<docker_registry_hostname>/aardbeiplantje
-   $ make docker_push_perl`
+    $ export REMOTE_DOCKER_PUSH=<docker_registry_hostname>/aardbeiplantje
+    $ make docker_push_perl
 
 If the REMOTE_DOCKER_PUSH environment variable isn't set, default the push is
 to docker hub.

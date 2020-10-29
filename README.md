@@ -77,19 +77,21 @@ full dev (~1GB):
 # Building
 
 To build the perl docker locally, you need to have docker set up on your host.
-There's an easy to use Makefile with the default target to build the perl-dev
-docker image and then the perl docker image:
+There's an easy to use default make target to build the perl-dev and perl
+docker image:
 
     $ make
 
 You can push the docker to your repository after that - note that you might
 need to login first of course:
 
-    $ export REMOTE_DOCKER_PUSH=<docker_registry_hostname>/aardbeiplantje
+    $ export REMOTE_DOCKER_REPO=<docker_registry_hostname>/aardbeiplantje
     $ make docker_push_perl
 
-If the REMOTE_DOCKER_PUSH environment variable isn't set, default the push is
-to docker hub.
+To push to docker.io as docker registry, e.g.:
+
+    $ export REMOTE_DOCKER_REPO=aardbeiplantje
+    $ make docker_push_perl
 
 # Extending the docker image
 

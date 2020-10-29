@@ -50,27 +50,34 @@ To build the perl lambda locally from scratch, you need to have docker set up
 on your host.  There's an easy to use Makefile with the default target to build
 the lambda zip layer image:
 
-    $ make
+    $ make lambda
 
 This will build perl:5.32-dev-latest, perl:5.32.0-lambda-dev-latest,
-perl:5.32.0-lambda-latest docker and then extracts the files for zipping. We
-add the bootstrap logic in the zip before zipping.
+perl:5.32.0-lambda-latest docker and then extracts the files from the docker
+imnage to make a zip file that will act as a lambda layer. We add the bootstrap
+logic in the zipfile.
 
 You can later on publish the new layer to AWS via either console, aws cli,
 terraform, etc. There's a make target to do this via plain aws cli, you will
 need to have set up your credentials properly to do so:
 
-    $ make publish_aws_lambda_layer_runtime_zip
+    $ make publishlambda
 
-The `deploy` target combines build and publish:
+You can also make the lambda layer from the fetched
+aardbeiplantje/perl:5.32.0-dev-latest docker and publish it:
 
-    $ make deploy
+    $ make aws_lambda_layer_runtime_zip publishlambda
 
-# Extending the docker image
+# Extending the lambda layer
 
+Extending the lambda layer can be done in a number of ways. We use docker to
+make a docker image, which we save to disk for making a zip. We can package
+extras from the local disk in that zip, and we can install CPAN modules or
+other tools in the docker.
 
 # TODO
 
 * make a trimmed runtime, although this is usually up to the needs of the project
-
+* perhaps use docker and aws cli and zip from within a docker to really only
+  depend on docker itself, and not make the local OS need zip and aws cli
 

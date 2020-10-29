@@ -4,35 +4,10 @@ ARG remote_docker_registry
 ARG perl_version=5.32.0
 
 # we start this from the perl:<version>-dev-latest docker, so we have build tools
-FROM ${remote_docker_registry}${docker_registry}/perl:${perl_version}-dev-latest as lambda-sb-perl
+FROM ${remote_docker_registry}${docker_registry}/perl:${perl_version}-dev-latest
 
 ENV perl_version=${perl_version:-5.32.0}
 MAINTAINER Tim Aerts <aardbeiplantje@gmail.com>
-
-# base build stuff
-RUN yum install -y make gcc tar gzip pkgconfig man groff
-
-# needed for building PERL and possibly cpan stuff (note that they are not
-# included in the end perl-sandbox as they don't go in /opt)
-RUN yum install -y   \
-        gdbm-devel   \
-        libdb-devel  \
-        gcc          \
-        make         \
-        tar          \
-        curl         \
-        xz           \
-        gzip         \
-        pkgconfig    \
-        wget         \
-        zip          \
-        less         \
-        bzip2        \
-        bash         \
-        ncurses-libs \
-        coreutils    \
-        findutils    \
-        patch
 
 # as the provided.al2 Amazon Linux 2 bootstrap lambda might be different then
 # the glibc in /opt/lib64 from the perl docker we remove the glibc we added and

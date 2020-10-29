@@ -3,7 +3,7 @@ DOCKER_REPO                ?= $(DOCKER_LOCAL)
 DOCKER_REGISTRY            ?= aardbeiplantje
 REMOTE_DOCKER_REGISTRY     ?= $(DOCKER_LOCAL)
 DOCKER_REPOSITORY          ?= $(DOCKER_LOCAL)/$(DOCKER_REGISTRY)
-REMOTE_DOCKER_PUSH         ?= $(DOCKER_REGISTRY)
+REMOTE_DOCKER_REPO         ?= $(REMOTE_DOCKER_REGISTRY)/$(DOCKER_REGISTRY)
 DOCKER_IMAGE_TAG           ?= dev
 YUM_BASE                   ?=
 YUM_URL                    ?= file:///
@@ -12,13 +12,15 @@ TMPDIR                     ?= /tmp/tmp_$(USER)
 PERL_VERSION               ?= 5.32.0
 PERL_AWS_LAMBDA_LAYER      ?= perl-5_32_0-runtime
 
-all: aws_lambda_layer_runtime_zip
+all: lambda
 
-.PHONY: aws_lambda_layer_runtime_zip
+.PHONY: lambda
 
 perl_docker: build_docker.perl-dev build_docker.perl docker_tag_perl docker_prune
 
-deploy: aws_lambda_layer_runtime_zip publish_aws_lambda_layer_runtime_zip
+publishlambda: publish_aws_lambda_layer_runtime_zip
+lambda: build_docker.perl-dev aws_lambda_layer_runtime_zip
+		@echo lambda zip is made in `pwd`/dist/perl-lambda-runtime-$(PERL_VERSION).zip
 
 build_docker.perl-dev:
 		docker build \
@@ -33,9 +35,28 @@ build_docker.perl-dev:
 			--build-arg GPG_URL=$(GPG_URL) \
 			--cache-from $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-dev-latest \
 			--tag $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-dev-latest \
+			--tag $(DOCKER_REGISTRY)/perl:$(PERL_VERSION)-dev-latest \
 			$(EXTRA_DOCKER_OPTS)
 
-build_docker.perl-lambda-dev:
+fetch_build_docker.perl-dev: docker_local_tag_pull_perl_dev docker_remote_tag_pull_perl_dev
+
+docker_remote_pull_perl_dev:
+	    docker image inspect $(REMOTE_DOCKER_REPO)/perl:$(PERL_VERSION)-dev-latest >/dev/null 2>&1 \
+		|| docker pull $(REMOTE_DOCKER_REPO)/perl:$(PERL_VERSION)-dev-latest \
+		|| exit 0
+
+docker_local_pull_perl_dev:
+		docker image inspect $(DOCKER_REGISTRY)/perl:$(PERL_VERSION)-dev-latest >/dev/null 2>&1 \
+	    || docker pull $(DOCKER_REGISTRY)/perl:$(PERL_VERSION)-dev-latest \
+		|| exit 0
+
+docker_remote_tag_pull_perl_dev: docker_remote_pull_perl_dev
+		docker tag $(REMOTE_DOCKER_REPO)/perl:$(PERL_VERSION)-dev-latest $(DOCKER_REGISTRY)/perl:$(PERL_VERSION)-dev-latest || exit 0
+
+docker_local_tag_pull_perl_dev: docker_local_pull_perl_dev
+		docker tag $(DOCKER_REGISTRY)/perl:$(PERL_VERSION)-dev-latest $(REMOTE_DOCKER_REPO)/perl:$(PERL_VERSION)-dev-latest || exit 0
+
+build_docker.perl-lambda-dev: fetch_build_docker.perl-dev
 		docker build \
 			./dockers/perl-lambda-dev \
 			-f ./dockers/perl-lambda-dev/Dockerfile \
@@ -50,7 +71,7 @@ build_docker.perl-lambda-dev:
 			--tag $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-lambda-dev-latest \
 			$(EXTRA_DOCKER_OPTS)
 
-build_docker.perl-lambda:
+build_docker.perl-lambda: build_docker.perl-lambda-dev
 		docker build \
 			./dockers/perl-lambda \
 			-f ./dockers/perl-lambda/Dockerfile \
@@ -70,16 +91,16 @@ docker_tag_perl:
 		&& docker tag $(DOCKER_REPOSITORY)/perl:latest $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-latest
 
 docker_push_perl:
-		   docker tag $(DOCKER_REPOSITORY)/perl:latest $(REMOTE_DOCKER_PUSH)/perl:$(PERL_VERSION) \
-		&& docker tag $(DOCKER_REPOSITORY)/perl:latest $(REMOTE_DOCKER_PUSH)/perl:$(PERL_VERSION)-latest \
-		&& docker tag $(DOCKER_REPOSITORY)/perl:latest $(REMOTE_DOCKER_PUSH)/perl:latest \
-		&& docker tag $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-dev-latest $(REMOTE_DOCKER_PUSH)/perl:$(PERL_VERSION)-dev-latest \
-		&& docker push $(REMOTE_DOCKER_PUSH)/perl:$(PERL_VERSION) \
-		&& docker push $(REMOTE_DOCKER_PUSH)/perl:$(PERL_VERSION)-latest \
-		&& docker push $(REMOTE_DOCKER_PUSH)/perl:latest \
-		&& docker push $(REMOTE_DOCKER_PUSH)/perl:$(PERL_VERSION)-dev-latest
+		   docker tag $(DOCKER_REPOSITORY)/perl:latest $(REMOTE_DOCKER_REPO)/perl:$(PERL_VERSION) \
+		&& docker tag $(DOCKER_REPOSITORY)/perl:latest $(REMOTE_DOCKER_REPO)/perl:$(PERL_VERSION)-latest \
+		&& docker tag $(DOCKER_REPOSITORY)/perl:latest $(REMOTE_DOCKER_REPO)/perl:latest \
+		&& docker tag $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-dev-latest $(REMOTE_DOCKER_REPO)/perl:$(PERL_VERSION)-dev-latest \
+		&& docker push $(REMOTE_DOCKER_REPO)/perl:$(PERL_VERSION) \
+		&& docker push $(REMOTE_DOCKER_REPO)/perl:$(PERL_VERSION)-latest \
+		&& docker push $(REMOTE_DOCKER_REPO)/perl:latest \
+		&& docker push $(REMOTE_DOCKER_REPO)/perl:$(PERL_VERSION)-dev-latest
 
-save_lambda_docker.perl-lambda: perl_docker build_docker.perl-lambda-dev build_docker.perl-lambda docker_prune
+save_lambda_docker.perl-lambda: build_docker.perl-lambda docker_prune
 		cd $(TMPDIR)/tmpdist/ && (docker save $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-lambda-latest \
 				|tar xfO - --wildcards '*/layer.tar'|tar xf -) \
 		&& chmod -R +w $(TMPDIR)/tmpdist/

@@ -85,8 +85,8 @@ docker image and then the perl docker image:
 You can push the docker to your repository after that - note that you might
 need to login first of course:
 
-  `$ export REMOTE_DOCKER_PUSH=<docker_registry_hostname>/aardbeiplantje`
-  `$ make docker_push_perl`
+  `$ export REMOTE_DOCKER_PUSH=<docker_registry_hostname>/aardbeiplantje
+   $ make docker_push_perl`
 
 If the REMOTE_DOCKER_PUSH environment variable isn't set, default the push is
 to docker hub.

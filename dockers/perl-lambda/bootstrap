@@ -1,5 +1,8 @@
 #!/bin/sh
+
 PERL_VERSION=5.32.0
+
+# PERL5LIB set is probably not needed anymore
 PERL5LIB=$LAMBDA_TASK_ROOT/lib/perl
 PERL5LIB=\
 /opt/lib/perl5:\
@@ -14,8 +17,26 @@ PERL5LIB=\
 /opt/lib/perl5/$PERL_VERSION/auto:\
 /opt/lib/perl5/$PERL_VERSION/x86_64:\
 /opt/lib/perl5/$PERL_VERSION/x86_64/auto
+
+# set an easy PATH
 PATH=$LAMBDA_TASK_ROOT/bin:/opt/bin:$PATH
+
+# we don't have locales, but perl complains, hence set it to 'C'
 LANG=C
+
+# make sure we don't have a LD_LIBRARY_PATH, perl itself is linked and
+# elf-patched to have the correct libraries loaded from /opt/lib64, as the
+# glibc version is the same, we can remove this, but we need to make sure that
+# /opt/lib64 points to /lib64, and the libraries are in fact scattered over
+# /lib and /lib64.
+#
+# Easiest is to just keep using the glibc we got in /opt/lib64
+#
 LD_LIBRARY_PATH=
-export PERL5LIB PATH LANG LD_LIBRARY_PATH PERL_VERSION
+
+# File::Temp needs to have a /tmp or TMPDIR set
+TMPDIR=/opt/tmp
+
+# start looping fetching lambda processing requests
+export PERL5LIB PATH LANG LD_LIBRARY_PATH PERL_VERSION TMPDIR
 exec /opt/lib64/ld-linux-x86-64.so.2 /opt/bin/perl /opt/bootstrap.lambda.pl

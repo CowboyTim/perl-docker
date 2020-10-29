@@ -1,102 +1,73 @@
 # Introduction
 
-This is a PERL docker.
+This is a PERL AWS Lambda.
 
-This perl is built to be used just as a docker that only contains perl. The
-perl distribution is installed in /opt and is a vanilla perl install. All bin
-scripts and binaries within a typical perl distribution are installed.
+This perl is built to be used in a docker that only contains perl and can be
+added as a layer for bootstrapping lambda function in Amazon AWS. The delivered
+build artifact is a zip file, with perl in ./lib and ./bin. Within aws lambda
+bootstrap, this is virtually mounted on /opt.
 
-The operating system this perl was built against is not part of this docker,
-instead, the glibc version is compied to /opt/lib64. This has a couple of
-advantages and disadvantages:
+The perl itself is taken from the aardbeiplantje/perl:5.32.0 docker, where we
+basically copy the /opt to / in a docker from scratch. We add a bootstrap shell
+script that execs in a perl lambda bootstrap script.
 
-* the size is very small and to the point: ~60MB
-* size can be reduced even more for pure runtime perl dockers: ~34MB
-* only 1 perl in the docker image
-* you can't add cpan modules in the docker itself
+This is a perl that's built against Amazon Linux 2 (provided.al2), and the
+glibc isn't perse needed in lib64 as it's the same.
 
-The restriction of cpan building can easily be fixed by making a new docker
-where you combine this with the original OS and add cpan modules again. This is
-probably even the normal case, as one will use this perl docker as a base to
-create new dockers with the tools needed to run the application, and this isn't
-limited to perl and cpan, but can as well be unix tools and other languages.
+Adding CPAN modules will need to be done seperately. Either you make a new
+layer or change this perl runtime layer zip before uploading.
 
-Currently, Amazon Linux 2 was used to make this build.
+The restriction of cpan building can be fixed by making a new docker where you
+combine this with the original OS and add cpan modules again. This is probably
+even the normal case, as one will use this perl docker as a base to create new
+dockers with the tools needed to run the application, and this isn't limited to
+perl and cpan, but can as well be unix tools and other languages.
 
 The perl distribution also contains busybox from the busybox docker and
-installed symlinks in /opt/bin. This is needed as e.g. /opt/bin/sh and
-/opt/bin/less is used by perldoc to show documentation.
+installed symlinks in /bin. This is needed as e.g. /bin/sh. Other tools that
+aren't needed to make a perl runtime lambda are removed which is the busybox
+tools and perl itself. As a bootstrap docker runs in an provided.al2 bootstrap,
+in theory they are already present in the bootstrap and thus can be removed.
 
 # Environment variables
 
-These are the environment variables defined within the docker by default to
-help running scripts:
+These are the environment variables defined within the perl lambda by default
+to help running scripts:
 
-* `PATH=/opt/bin:/opt/scripts:$PATH`
-* `LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/5.32.0/x86_64/CORE`
+* `PATH=$LAMBDA_TASK_ROOT/bin:/opt/bin:/opt/scripts:$PATH`
+* `LD_LIBRARY_PATH=`
+* `PERL5LIB=...`
 * `PERL_VERSION=5.32.0`
 * `TMPDIR=/opt/tmp`
+* `LANG=C`
 
-# Quick reference
-
-You can use this perl docker like this:
-
-    $ docker run -it --rm aardbeiplantje/perl -MConfig -we 'print $Config{version}."\n"'
-
-Similar, other tools can be run like this:
-
-    $ docker run -it --rm aardbeiplantje/perl -e 'exec @ARGV' perldoc -f sysopen
-
-You can start perl interactively just like perl:
-
-    $ docker run -it --rm aardbeiplantje/perl -e 'exec @ARGV' sh
-
-Or, as busybox is installed in /opt/bin, and /opt/bin is in the PATH, you can
-for instance list what's in the docker:
-
-    $ docker run -it --rm aardbeiplantje/perl -e 'exec @ARGV' find / -xdev
-
-To run external scripts, for instance:
-
-    $ docker run -i --rm aardbeiplantje/perl < ./hello_world.pl
-
-Or:
-
-    $ docker run -it --rm -v $PWD:/opt/scripts aardbeiplantje/perl /opt/scripts/hello_world.pl
-
-# Images
-
-full runtime:
-* aardbeiplantje/perl:5.32.0
-* aardbeiplantje/perl:5.32.0-latest
-* aardbeiplantje/perl:latest
-
-full dev (~1GB):
-* aardbeiplantje/5.32.0-dev-latest
+LD_LIBRARY_PATH is unset explicitly. The $LAMBDA_TASK_ROOT/bin is added so you
+can easily place scripts there. PERL5LIB is set, but probably not needed.
 
 # Building
 
-To build the perl docker locally, you need to have docker set up on your host.
-There's an easy to use Makefile with the default target to build the perl-dev
-docker image and then the perl docker image:
+To build the perl lambda locally from scratch, you need to have docker set up
+on your host.  There's an easy to use Makefile with the default target to build
+the lambda zip layer image:
 
     $ make
 
-You can push the docker to your repository after that - note that you might
-need to login first of course:
+This will build perl:5.32-dev-latest, perl:lambda-dev, perl:lambda docker and
+then extracts the files for zipping. We add the bootstrap logic in the zip
+before zipping.
 
-    $ export REMOTE_DOCKER_PUSH=<docker_registry_hostname>/aardbeiplantje
-    $ make docker_push_perl
+You can later on publish the new layer to AWS via either console, aws cli,
+terraform, etc. There's a make target to do this via plain aws cli, you will
+need to have set up your credentials properly to do so:
 
-If the REMOTE_DOCKER_PUSH environment variable isn't set, default the push is
-to docker hub.
+    $ make publish_aws_lambda_layer_runtime_zip
+
+The `deploy` target combines build and publish:
+
+    $ make deploy
 
 # Extending the docker image
 
-The docker image can be extened with other tools that you might need. Easiest
-is to start from the aardbeiplantje/perl:5.32.0-dev-latest image as the CPAN
-config is already present. Most of the build utilities typically needed on a
-linux OS are also already preinstalled: make, gcc, tar, gzip,..
 
 # TODO
 

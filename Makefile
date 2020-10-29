@@ -12,9 +12,9 @@ TMPDIR                     ?= /tmp/tmp_$(USER)
 PERL_VERSION               ?= 5.32.0
 PERL_AWS_LAMBDA_LAYER      ?= perl-5_32_0-runtime
 
-all: perl_docker
+all: aws_lambda_layer_runtime_zip
 
-.PHONY: perl_docker
+.PHONY: aws_lambda_layer_runtime_zip
 
 perl_docker: build_docker.perl-dev build_docker.perl docker_tag_perl docker_prune
 
@@ -85,7 +85,11 @@ save_lambda_docker.perl-lambda: perl_docker build_docker.perl-lambda-dev build_d
 		&& chmod -R +w $(TMPDIR)/tmpdist/
 
 aws_lambda_layer_runtime_zip: mkdist copy_bootstrap save_lambda_docker.perl-lambda
-		cd $(TMPDIR)/tmpdist/ && zip -r --symlinks $(TMPDIR)/dist/perl-lambda-runtime.zip *
+		(cd $(TMPDIR)/tmpdist/ && zip -r --symlinks $(TMPDIR)/dist/perl-lambda-runtime.zip *) \
+		&& rm -rf dist/ \
+		&& mkdir dist/ \
+		&& mv $(TMPDIR)/dist/perl-lambda-runtime.zip ./dist/perl-lambda-runtime-$(PERL_VERSION).zip \
+		&& rm -rf $(TMPDIR)/tmpdist/
 
 publish_aws_lambda_layer_runtime_zip:
 		aws lambda publish-layer-version \
@@ -93,7 +97,7 @@ publish_aws_lambda_layer_runtime_zip:
 				--description 'This is the PERL $(PERL_VERSION) Lambda runtime' \
 				--license-info "MIT" \
 				--compatible-runtimes provided.al2 \
-				--zip-file fileb://$(TMPDIR)/dist/perl-lambda-runtime.zip
+				--zip-file fileb://./dist/perl-lambda-runtime-$(PERL_VERSION).zip
 
 copy_bootstrap:
 		cp dockers/perl-lambda/bootstrap.lambda.pl dockers/perl-lambda/bootstrap $(TMPDIR)/tmpdist/ && chmod +x $(TMPDIR)/tmpdist/bootstrap*

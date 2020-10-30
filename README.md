@@ -98,6 +98,36 @@ is to start from the `aardbeiplantje/perl:5.32.0-dev-latest` image as the CPAN
 config is already present. Most of the build utilities typically needed on a
 linux OS are also already preinstalled: make, gcc, tar, gzip,..
 
+Let's say you want JSON to be added as a cpan module. The Dockerfile in our
+test docker dir will need to look like this:
+
+    $ cat myperl/Dockerfile
+    # start from the perl-dev docker
+    FROM aardbeiplantje/perl:5.32.0-dev-latest as my-perl-d
+
+    # add a cpan module with the provided cpan config
+    RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -fi -T JSON
+
+    # squash the docker, by starting from scratch
+    FROM scratch
+    COPY --from=my-perl-d /opt/ /
+    ENV PATH=/opt/bin/:/opt/scripts:$PATH
+    ENTRYPOINT ["/opt/lib64/ld-linux-x86-64.so.2", "/opt/bin/perl"]
+
+    $ docker build ./myperl/ -f ./myperl/Dockerfile \
+        --network host \
+        --tag myperl:latest 
+
+Note the cpan options: -fi -T. This is needed as the cpan modules for testing
+are preinstalled in /tmp/cpan/local, which is about to be removed, and if a
+cpan is already there, it won't be installed. The -f option will make sure it
+does. Note that it invalidates the -T option.
+
+When this docker is built, the perl docker will be capably of using JSON:
+
+    $ docker run --rm -i myperl:latest -MJSON -we 'print "$JSON::VERSION\n"'
+
+
 # TODO
 
 * make a trimmed runtime, although this is usually up to the needs of the project

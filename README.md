@@ -33,9 +33,6 @@ These are the environment variables defined within the docker by default to
 help running scripts:
 
 * `PATH=/opt/bin:/opt/scripts:$PATH`
-* `LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/5.32.0/x86_64/CORE`
-* `PERL_VERSION=5.32.0`
-* `TMPDIR=/opt/tmp`
 
 # Quick reference
 
@@ -46,6 +43,7 @@ You can use this perl docker like this:
 Similar, other tools can be run like this:
 
     $ docker run -it --rm aardbeiplantje/perl -e 'exec @ARGV' perldoc -f sysopen
+    $ docker run -it --rm aardbeiplantje/perl -e 'exec @ARGV' perldoc perlguts
 
 You can start perl interactively just like perl:
 

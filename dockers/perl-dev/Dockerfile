@@ -89,6 +89,11 @@ RUN mkdir -p /opt/bin                            \
     && cp /lib64/libtinfo.so*  /opt/lib64/       \
     && (cd /opt/lib64 && ln -s libtinfo.so.5 libtinfo.so)
 
+# setup a /tmp for File::Temp
+RUN mkdir /opt/tmp && chmod 1777 /opt/tmp
+
+# for easy script adding, this is also added to the PATH
+RUN mkdir /opt/scripts
 
 # copy busybox for debugging, add at least 'sh' for docker builds later on if
 # we move from /opt to /. busybox can later on also be used in the perl-docker
@@ -117,14 +122,19 @@ RUN \
     && /opt/bin/sh                                                                           \
         ./Configure                                                                          \
         -Duse64bitall                                                                        \
-        -Darchname=x86_64                                                                    \
         -Duseshrplib                                                                         \
-        -Dprefix=/opt/                                                                       \
+        -Dprefix=/opt                                                                        \
+        -Dinstallprefix=/opt                                                                 \
+        -Dsiteprefix=/opt                                                                    \
+        -Dvendorprefix=/opt                                                                  \
+        -Dcf_by='CowboyTim <aardbeiplantje@gmail.com>'                                       \
         -Duselargefiles                                                                      \
+        -Dinc_version_list=none                                                              \
         -Dldflags='-Wl,-R/opt/lib -Wl,-R/opt/lib64 -Wl,--dynamic-linker,/opt/lib64/ld-linux-x86-64.so.2' \
         -des                                                                                 \
     && make -j16                                                                             \
     && make -j16 install                                                                     \
+    && rm -rf /opt/src/perl                                                                  \
     && mv /bin/sh.b /bin/sh
 
 WORKDIR /
@@ -132,7 +142,7 @@ WORKDIR /
 # after the perl build, switch the fat bash back to busybox sh
 RUN (cd /opt/bin && rm bash sh && ln -s busybox sh) && rm /opt/lib64/libtinfo*
 
-ENV INSTALL_BASE=/opt/tmp/cpan_local
+ENV INSTALL_BASE=/tmp/cpan/local
 ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/${perl_version}/x86_64/CORE
 ENV PERL5LIB=\
 $INSTALL_BASE/lib/perl5:\
@@ -155,36 +165,36 @@ $INSTALL_BASE/lib/perl5/x86_64/auto:\
 /opt/lib/perl5/${perl_version}/x86_64/auto
 
 # cpan config
-COPY cpan_config.pl /opt
+COPY cpan_config.pl /tmp/
 
-# install CPAN modules for CPAN in INSTALL_BASE=/opt/tmp/cpan_local. This is
+# install CPAN modules for CPAN in INSTALL_BASE=/tmp/cpan/local. This is
 # handled by cpan_config.pl. This is because we don't want cpan-needed modules
 # in the end docker, we can't do anything with those and they take up space.
 # Best is to look out for those while installing cpan modules that are needed,
 # often they bring in dependencies that aren't needed later on at runtime
-RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  CPAN
-RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  YAML
-RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  ExtUtils::PkgConfig
-RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  ExtUtils::Helpers
-RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  HTTP::Date
-RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  HTML::Tiny
-RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  install
-RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Canary::Stability
-RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Algorithm::Diff
-RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Spiffy
-RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Text::Diff
-RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Base
-RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Deep
-RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::LeakTrace
-RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  inc::latest
-RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Module::Build
-RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  common::sense
-RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::More
-RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Simple
-RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Builder
-RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test::Harness
-RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test2
-RUN /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -Ti  Test2::Formatter
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  CPAN
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  YAML
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  ExtUtils::PkgConfig
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  ExtUtils::Helpers
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  HTTP::Date
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  HTML::Tiny
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  install
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Canary::Stability
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Algorithm::Diff
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Spiffy
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Text::Diff
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test::Base
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test::Deep
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test::LeakTrace
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  inc::latest
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Module::Build
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  common::sense
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test::More
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test::Simple
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test::Builder
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test::Harness
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test2
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test2::Formatter
 
 # cleanup stuff in /opt we never will need
 RUN    rm -rf /opt/src                \
@@ -192,8 +202,12 @@ RUN    rm -rf /opt/src                \
     && rm -rf /opt/man                \
     && rm -rf /opt/include            \
     && rm -rf /opt/games              \
+    && rm -rf /opt/perl               \
     && rm -rf /opt/lib/python*        \
     && mkdir -p /opt/tmp && chmod 1777 /opt/tmp
+
+# reset the default cpan install, this way, new cpan modules go to site_perl
+ENV INSTALL_BASE=
 
 # install CPAN modules for perl itself in /opt, keep this 1 cpan per RUN for
 # docker's caching features. Use the correct INSTALL_BASE=/opt for this. Note
@@ -202,12 +216,13 @@ RUN    rm -rf /opt/src                \
 #
 # temp use for cpan:
 # E.g.:
-# RUN INSTALL_BASE=/opt/tmp/cpan_local /opt/bin/cpan -j /opt/cpan_config.pl -Ti  CPAN
+# RUN INSTALL_BASE=/tmp/cpan/local /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  CPAN
 #
 # add in the perl docker:
 # E.g.:
-# RUN INSTALL_BASE=/opt /opt/bin/cpan -j /opt/cpan_config.pl -Ti JSON::XS
+# RUN /opt/bin/cpan -j /tmp/cpan_config.pl -Ti JSON::XS
 #
+
 
 # after the extra cpan modules install, cleanup the .h files
 RUN find /opt/lib/perl5/ -type f -name '.packlist'|xargs rm

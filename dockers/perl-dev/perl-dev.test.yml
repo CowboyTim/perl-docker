@@ -1,3 +1,0 @@
-sut:
-  build: .
-  command: /opt/bin/perl /tmp/test_core_modules.pl

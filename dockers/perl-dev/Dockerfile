@@ -227,8 +227,16 @@ ENV INSTALL_BASE=
 # after the extra cpan modules install, cleanup the .h files
 RUN find /opt/lib/perl5/ -type f -name '.packlist'|xargs rm
 
-# for testing
+# reset other ENV variables we don't need anymore
+ENV PERL5LIB=
+ENV TMPDIR=
+ENV LD_LIBRARY_PATH=
+
+# for testing, add the core modules test script
 COPY test_core_modules.pl /tmp/
+
+# and test this, if it fails, the docker image isn't tagged
+RUN /opt/bin/perl /tmp/test_core_modules.pl
 
 ENV PATH=/opt/bin/:/opt:$PATH
 ENTRYPOINT ["/opt/bin/busybox", "sh"]

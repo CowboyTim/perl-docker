@@ -40,10 +40,9 @@ ENV PERL5LIB=\
 # install perl extra cpan's, those go in /opt, as we add them to be used by
 # Lambda note that if you need a module that's already added as a dependency in
 # /opt/tmp/cpan_local, -fTi is needed to force install
-RUN INSTALL_BASE=/opt /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -fTi common::sense
-RUN INSTALL_BASE=/opt /opt/bin/perl /opt/bin/cpan -j /opt/cpan_config.pl -fTi JSON::XS
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -fTi common::sense
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -fTi JSON::XS
 
 # docker specific, won't be used for the lambda zip
-ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/$perl_version/x86_64/CORE
 ENTRYPOINT ["/opt/lib64/ld-linux-x86-64.so.2", "/opt/bin/perl"]
 CMD ["-e", "exec '/opt/bin/busybox', 'sh'"]

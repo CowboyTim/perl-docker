@@ -14,9 +14,6 @@ RUN rm -rf /opt/lib/perl5/*/pod
 RUN rm -rf /opt/share
 RUN rm -rf /opt/man
 
-# remove the cpan cache
-RUN rm -rf /opt/perl/cpan && rmdir /opt/perl
-
 # unicode/unicore
 RUN rm -rf /opt/lib/perl5/*/unicore
 RUN rm -rf /opt/lib/perl5/*/Unicode/Collate

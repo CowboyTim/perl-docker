@@ -66,13 +66,13 @@ Or:
 
 # Images
 
-full runtime:
-* aardbeiplantje/perl:5.32.0
-* aardbeiplantje/perl:5.32.0-latest
-* aardbeiplantje/perl:latest
+full runtime (~60MB):
+* `aardbeiplantje/perl:5.32.0`
+* `aardbeiplantje/perl:5.32.0-latest`
+* `aardbeiplantje/perl:latest`
 
-full dev (~1GB):
-* aardbeiplantje/5.32.0-dev-latest
+full OS dev for extending perl (~1.5GB):
+* `aardbeiplantje/5.32.0-dev-latest`
 
 # Building
 
@@ -96,7 +96,7 @@ To push to docker.io as docker registry, e.g.:
 # Extending the docker image
 
 The docker image can be extened with other tools that you might need. Easiest
-is to start from the aardbeiplantje/perl:5.32.0-dev-latest image as the CPAN
+is to start from the `aardbeiplantje/perl:5.32.0-dev-latest` image as the CPAN
 config is already present. Most of the build utilities typically needed on a
 linux OS are also already preinstalled: make, gcc, tar, gzip,..
 

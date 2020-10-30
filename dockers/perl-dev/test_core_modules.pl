@@ -25,14 +25,14 @@ foreach my $m (@perl_modules){
         |Win32CORE
         |Unicode
     $)/x;
-    print "[TEST] $m\n";
     $m = "Test::Tester; require $m" if $m eq 'Test::Builder';
+    $m = "no; no warnings 'useless'; require sort;" if $m eq 'sort';
     eval "require $m";
     if($@ and $@ =~ m/Can't locate/){
-        print "[ERROR] $m: $@\n";
+        print STDERR "[ERROR] $m: $@\n";
         push @bad_modules, $m;
         $err = 1;
     }
 }
-print "[BAD] ".join(' ', @bad_modules)."\n" if @bad_modules;
+print STDERR "[BAD] ".join(' ', @bad_modules)."\n" if @bad_modules;
 exit 1 if $err;

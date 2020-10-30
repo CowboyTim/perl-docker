@@ -227,5 +227,8 @@ ENV INSTALL_BASE=
 # after the extra cpan modules install, cleanup the .h files
 RUN find /opt/lib/perl5/ -type f -name '.packlist'|xargs rm
 
+# for testing
+COPY test_core_modules.pl /tmp/
+
 ENV PATH=/opt/bin/:/opt:$PATH
 ENTRYPOINT ["/opt/bin/busybox", "sh"]

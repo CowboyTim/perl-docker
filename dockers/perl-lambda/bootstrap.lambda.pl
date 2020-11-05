@@ -1,5 +1,8 @@
 #!/opt/bin/perl
 
+# Copyright: 2020, Tim Aerts <aardbeiplantje@gmail.com>
+# Apache-2.0 License, See https://dev.perl.org/licenses/artistic.html or LICENSE
+
 # check a few things, default, sanity
 use strict;
 unless($ENV{_HANDLER}){

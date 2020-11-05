@@ -91,12 +91,15 @@ docker_push_perl:
 		&& docker push $(REMOTE_DOCKER_REPO)/perl:latest \
 		&& docker push $(REMOTE_DOCKER_REPO)/perl:$(PERL_VERSION)-dev-latest
 
-save_lambda_docker.perl-lambda: build_docker.perl-lambda docker_prune
-		cd $(TMPDIR)/tmpdist/ && (docker save $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-lambda-latest \
-				|tar xfO - --wildcards '*/layer.tar'|tar xf -) \
-		&& chmod -R +w $(TMPDIR)/tmpdist/
+save_lambda_docker.perl-lambda: cleantmpdist mkdist build_docker.perl-lambda docker_prune
+	    (cd $(TMPDIR)/tmpdist/ || exit 1; \
+        did=$$(docker create $(DOCKER_REPOSITORY)/perl:$(PERL_VERSION)-lambda-latest); \
+        docker export $$did|tar xf -; \
+        docker rm -f $$did; \
+        chmod -R +w $(TMPDIR)/tmpdist/; \
+        rm -rf proc dev sys .dockerenv etc)
 
-aws_lambda_layer_runtime_zip: mkdist copy_bootstrap save_lambda_docker.perl-lambda
+aws_lambda_layer_runtime_zip: cleandist mkdist copy_bootstrap save_lambda_docker.perl-lambda
 		(cd $(TMPDIR)/tmpdist/ && zip -r --symlinks $(TMPDIR)/dist/perl-lambda-runtime.zip *) \
 		&& rm -rf dist/ \
 		&& mkdir dist/ \

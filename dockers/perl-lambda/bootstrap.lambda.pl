@@ -70,10 +70,9 @@ sub init_handler {
     if($@){
         chomp(my $err = $@);
         my $err_post_data = eval {
-            cpan_load("JSON::XS");
-            return JSON::XS::encode_json({
+            return _encode_json({
+                errorType    => "InvalidFunctionException",
                 errorMessage => "Failed to load function $ENV{_HANDLER}: $err",
-                errorType    => "InvalidFunctionException"
             });
         };
         p_log($@) if $@;
@@ -213,11 +212,10 @@ sub process_request {
             if(!defined $exit_value_wanted or $exit_value_wanted > 0){
                 $response_t = 'error';
                 local $@;
-                eval {cpan_load('JSON::XS')};
-                p_log("problem loading JSON::XS: $@") if $@;
-                $handle_request_data  = JSON::XS::encode_json({
+                chomp(my $l_err = $err);
+                $handle_request_data  = _encode_json({
                     errorType    => "RuntimeException",
-                    errorMessage => $err,
+                    errorMessage => $l_err,
                 });
             }
         }
@@ -251,16 +249,22 @@ sub process_request {
         chdir($ENV{LAMBDA_TASK_ROOT});
         cleantmp();
         $response_t = 'error';
-        eval {cpan_load('JSON::XS')};
-        p_log("problem loading JSON::XS: $@") if $@;
-        $handle_request_data  = JSON::XS::encode_json({
+        $handle_request_data  = _encode_json({
             errorType    => "RuntimeException",
-            errorMessage => "problem executing $ENV{_HANDLER} for [$invocation_id]: $err\n"
+            errorMessage => "problem executing $ENV{_HANDLER} for [$invocation_id]: $err",
         });
     }
     $response_t          //= 'response';
     $handle_request_data //= '';
     return ($response_t, $handle_request_data);
+}
+
+sub _encode_json {
+    my ($href) = @_;
+    eval {cpan_load('JSON::XS')};
+    my $r = eval {JSON::XS::encode_json($href)};
+    $r  //= "{".join(",", map {("\"$_\":",'"'.($href->{$_}=~s/"/\\"/gr).'"')} sort keys %{$href//{}})."}";
+    return $r;
 }
 
 sub _lambda_execute {

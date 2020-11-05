@@ -39,4 +39,9 @@ TMPDIR=/opt/tmp
 
 # start looping fetching lambda processing requests
 export PERL5LIB PATH LANG LD_LIBRARY_PATH PERL_VERSION TMPDIR
-exec /opt/lib64/ld-linux-x86-64.so.2 /opt/bin/perl /opt/bootstrap.lambda.pl
+
+if [ "${PERL_LAMBDA_BOOTSTRAP:-1}" = 1 ]; then
+    exec /opt/lib64/ld-linux-x86-64.so.2 /opt/bin/perl /opt/bootstrap.lambda.pl
+else
+    exec /bin/sh /opt/bootstrap.lambda.sh
+fi

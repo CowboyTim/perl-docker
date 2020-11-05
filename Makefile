@@ -113,7 +113,7 @@ publish_aws_lambda_layer_runtime_zip:
 				--zip-file fileb://./dist/perl-lambda-runtime-$(PERL_VERSION).zip
 
 copy_bootstrap:
-		cp dockers/perl-lambda/bootstrap.lambda.pl dockers/perl-lambda/bootstrap $(TMPDIR)/tmpdist/ && chmod +x $(TMPDIR)/tmpdist/bootstrap*
+		cp dockers/perl-lambda/bootstrap.lambda.* dockers/perl-lambda/bootstrap $(TMPDIR)/tmpdist/ && chmod +x $(TMPDIR)/tmpdist/bootstrap*
 
 docker_prune:
 		docker image prune -f

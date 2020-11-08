@@ -127,6 +127,35 @@ When this docker is built, the perl docker will be capably of using JSON:
 
     $ docker run --rm -i myperl:latest -MJSON -we 'print "$JSON::VERSION\n"'
 
+# Precompiled PERL extensions
+
+In the dockers directory, there are precompiled docker extensions. E.g.
+perl:ssl. To build that, specify a different tag:
+
+    LATEST_TAG=-5.32.0-dev-latest make build_docker.perl:ssl
+
+These can be "stacked" upon each other to make the end perl runtime for your
+app, even when they contain the same files. This is managed by docker. 
+
+E.g.:
+
+    $ cat myapp/Dockerfile
+    FROM aardbeiplantje/perl:ssl-5.32.0-dev-latest    as app-sb-ssl
+    FROM aardbeiplantje/perl:libxml-5.32.0-dev-latest as app-sb-xml
+    FROM scratch
+    COPY --from=app-sb-ssl /opt /
+    COPY --from=app-sb-xml /opt /
+    # some own written scripts
+    COPY src/bin/* /opt/scripts
+    COPY src/lib/* /opt/scripts
+    ENV PATH=/opt/bin/:/opt/scripts:$PATH
+    ENV PERL5LIB=/opt/scripts/lib
+    ENTRYPOINT ["/opt/lib64/ld-linux-x86-64.so.2", "/opt/bin/perl"]
+
+    $ docker build ./myapp/ -f ./myapp/Dockerfile \
+        --network host \
+        --tag myapp:latest 
+
 
 # TODO
 

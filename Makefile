@@ -6,6 +6,7 @@ REMOTE_DOCKER_REPO         ?= $(REMOTE_DOCKER_REGISTRY)/$(DOCKER_REGISTRY)
 TMPDIR                     ?= /tmp/tmp_$(USER)
 PERL_VERSION               ?= 5.32.0
 PERL_AWS_LAMBDA_LAYER      ?= perl-5_32_0-runtime
+LATEST_TAG                 ?= :latest
 
 all: lambda
 
@@ -144,7 +145,7 @@ build_docker.%:
 			--build-arg docker_registry=$(DOCKER_REGISTRY) \
 			--build-arg remote_docker_registry=$(REMOTE_DOCKER_REGISTRY)/ \
 			--build-arg perl_version=$(PERL_VERSION) \
-			--cache-from $(DOCKER_REPOSITORY)/$*:latest \
-			--tag $(DOCKER_REPOSITORY)/$*:latest \
+			--cache-from $(DOCKER_REPOSITORY)/$*$(LATEST_TAG) \
+			--tag $(DOCKER_REPOSITORY)/$*$(LATEST_TAG) \
 			$(EXTRA_DOCKER_OPTS)
 

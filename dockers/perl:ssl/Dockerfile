@@ -27,7 +27,6 @@ RUN    mkdir -p                             /opt/lib64/ \
     && cp -a /usr/lib64/libcrypto*.so*      /opt/lib64/ \
     && cp -a /usr/lib64/libselinux*.so*     /opt/lib64/ \
     && cp -a /usr/lib64/libpcre*.so*        /opt/lib64/ \
-    && cp -a /usr/lib64/libdl*.so*          /opt/lib64/ \
     && cp -a /usr/lib64/libdl*.so*          /opt/lib64/
 
 #

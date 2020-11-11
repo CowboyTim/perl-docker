@@ -6,6 +6,9 @@ ARG perl_version=5.32.0
 # start new from the dev docker, copy /opt to /opt
 FROM ${remote_docker_registry}${docker_registry}/perl:${perl_version}-dev-latest as dev-sb-perl
 
+# cleanup cpan cache, this isn't needed for a runtime perl
+RUN rm -rf /opt/tmp/cpan
+
 # start new to have an empty layer, we basically squash the docker here
 FROM scratch
 COPY --from=dev-sb-perl /opt/ /

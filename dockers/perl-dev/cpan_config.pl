@@ -1,7 +1,7 @@
 
 no warnings 'once';
 my $b_dir        = "/opt/";
-my $base_dir     = $ENV{CPAN_HOME}    || "/tmp/cpan";
+my $base_dir     = $ENV{CPAN_HOME}    || "/opt/tmp/cpan";
 my $install_base = $ENV{INSTALL_BASE};
 $ENV{PERL5LIB} ||= "";
 $ENV{PERL5LIB}  .= "$b_dir/lib/perl5:$b_dir/lib/perl5/auto:$b_dir/lib/perl5/x86_64:$b_dir/lib/perl5/x86_64/auto";

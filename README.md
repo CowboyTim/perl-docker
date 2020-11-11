@@ -127,12 +127,12 @@ When this docker is built, the perl docker will be capably of using JSON:
 
     $ docker run --rm -i myperl:latest -MJSON -we 'print "$JSON::VERSION\n"'
 
-# Precompiled PERL extensions
+# Precompiled PERL CPAN modules
 
 In the dockers directory, there are precompiled docker extensions. E.g.
 perl:ssl. To build that, specify a different tag:
 
-    LATEST_TAG=-5.32.0-dev-latest make build_docker.perl:ssl
+    LATEST_TAG=-5.32.0-dev-latest make build_docker.perl:io-socket-ssl
 
 These can be "stacked" upon each other to make the end perl runtime for your
 app, even when they contain the same files. This is managed by docker. 
@@ -140,11 +140,17 @@ app, even when they contain the same files. This is managed by docker.
 E.g.:
 
     $ cat myapp/Dockerfile
-    FROM aardbeiplantje/perl:ssl-5.32.0-dev-latest    as app-sb-ssl
-    FROM aardbeiplantje/perl:libxml-5.32.0-dev-latest as app-sb-xml
+    FROM aardbeiplantje/perl:5.32.0           as app-sb-perl
+    FROM aardbeiplantje/perl:io-socket-ssl    as app-sb-ssl
+    FROM aardbeiplantje/perl:json-xs          as app-sb-json-xs
+    FROM aardbeiplantje/perl:json-pp          as app-sb-json-pp
+    FROM aardbeiplantje/perl:json             as app-sb-json
     FROM scratch
-    COPY --from=app-sb-ssl /opt /
-    COPY --from=app-sb-xml /opt /
+    COPY --from=app-sb-perl    / /
+    COPY --from=app-sb-ssl     / /
+    COPY --from=app-sb-json-xs / /
+    COPY --from=app-sb-json-pp / /
+    COPY --from=app-sb-json    / /
     # some own written scripts
     COPY src/bin/* /opt/scripts
     COPY src/lib/* /opt/scripts
@@ -156,9 +162,28 @@ E.g.:
         --network host \
         --tag myapp:latest 
 
+# Building PERL CPAN dockers
+
+Most of the PurePerl CPAN modules will (or at least should) be possible to
+build into a docker that can be used as  a precompiled CPAN docker. Pure XS
+modules can be built, but when external libraries are needed, these need to be
+added as a seperate Dockerfile.
+
+To make a PurePerl CPAN module:
+
+    perl dockerize_cpan.pl JSON JSON::XS JSON::PP
+
+This will use the aardbeiplantje/perl:5.32.0-dev-latest docker to make 3
+different dockers, one for each cpan specified. Note that a cpan module can
+include dependencies, those will also be added to that cpan docker at build.
 
 # TODO
 
 * make a trimmed runtime, although this is usually up to the needs of the project
+* make the docker cpan use the cpan module's version nr
+* tag all of the dockers with a git ref
+* allow for making layers that include more then 1 cpan module in dockerize_cpan.pl
+* find a way to automate the external library check
+* add a simple test for the built cpan module
 
 

@@ -169,7 +169,7 @@ build into a docker that can be used as  a precompiled CPAN docker. Pure XS
 modules can be built, but when external libraries are needed, these need to be
 added as a seperate Dockerfile.
 
-To make a PurePerl CPAN module:
+To make a PurePerl CPAN module, the [dockerize_cpan.pl](https://github.com/CowboyTim/perl-docker/blob/docker/dockerize_cpan.pl) script can be used:
 
     perl dockerize_cpan.pl JSON JSON::XS JSON::PP
 
@@ -185,5 +185,6 @@ include dependencies, those will also be added to that cpan docker at build.
 * allow for making layers that include more then 1 cpan module in dockerize_cpan.pl
 * find a way to automate the external library check
 * add a simple test for the built cpan module
+* make the dockerize_cpan.pl be ran with the aardbeiplantje/perl:5.32.0-dev-latest docker
 
 

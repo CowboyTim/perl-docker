@@ -27,12 +27,7 @@ The perl distribution also contains busybox from the busybox docker and
 installed symlinks in /opt/bin. This is needed as e.g. /opt/bin/sh and
 /opt/bin/less is used by perldoc to show documentation.
 
-# Environment variables
-
-These are the environment variables defined within the docker by default to
-help running scripts:
-
-* `PATH=/opt/bin:/opt/scripts:$PATH`
+This project is maintained on github here: [perl-docker](https://github.com/CowboyTim/perl-docker)
 
 # Quick reference
 
@@ -71,6 +66,13 @@ full runtime (~60MB):
 
 full OS dev for extending perl (~1.5GB):
 * `aardbeiplantje/5.32.0-dev-latest`
+
+# Environment variables
+
+These are the environment variables defined within the docker by default to
+help running scripts:
+
+* `PATH=/opt/bin:/opt/scripts:$PATH`
 
 # Building
 

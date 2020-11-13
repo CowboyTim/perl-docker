@@ -125,8 +125,8 @@ RUN \
         -Duseshrplib                                                                         \
         -Dprefix=/opt                                                                        \
         -Dinstallprefix=/opt                                                                 \
-        -Dsiteprefix=/opt                                                                    \
-        -Dvendorprefix=/opt                                                                  \
+        -Dsiteprefix=/opt/site_perl                                                          \
+        -Dvendorprefix=/opt/vendor_perl                                                      \
         -Dcf_by='CowboyTim <aardbeiplantje@gmail.com>'                                       \
         -Duselargefiles                                                                      \
         -Dinc_version_list=none                                                              \

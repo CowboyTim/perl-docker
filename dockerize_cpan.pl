@@ -41,14 +41,15 @@ sub build_cpan_docker {
     print {$d_fh} <<EOdockerfile;
 FROM $ENV{DOCKER_REGISTRY}/perl:$perl_version_tag as my-perl-d
 ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/$perl_version/x86_64/CORE
-ENV INSTALL_BASE=/newopt
+# see cpan_config.pl!! Add trailing slash (/)!!
+ENV DESTDIR=/newopt/
+ENV INSTALL_BASE=" DESTDIR=\$DESTDIR"
 ENV PERL5LIB=\\
-\$INSTALL_BASE/lib/perl5:\\
-\$INSTALL_BASE/lib/perl5/auto:\\
-\$INSTALL_BASE/lib/perl5/site_perl:\\
-\$INSTALL_BASE/lib/perl5/site_perl/auto:\\
-\$INSTALL_BASE/lib/perl5/x86_64:\\
-\$INSTALL_BASE/lib/perl5/x86_64/auto:\\
+\$DESTDIR/opt/site_perl/lib/perl5:\\
+\$DESTDIR/opt/site_perl/lib/perl5/site_perl/auto:\\
+\$DESTDIR/opt/site_perl/lib/perl5/site_perl/$perl_version:\\
+\$DESTDIR/opt/site_perl/lib/perl5/site_perl/$perl_version/x86_64-linux:\\
+\$DESTDIR/opt/site_perl/lib/perl5/site_perl/$perl_version/x86_64-linux/auto:\\
 /opt/lib/perl5:\\
 /opt/lib/perl5/site_perl:\\
 /opt/lib/perl5/site_perl/auto:\\
@@ -62,17 +63,18 @@ ENV PERL5LIB=\\
 /opt/lib/perl5/$perl_version/x86_64:\\
 /opt/lib/perl5/$perl_version/x86_64/auto
 RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti \\
-    $cpan_to_add         \\
+    $cpan_to_add \\
     ; exit 0
-RUN   rm -rf /newopt/share                                 \\
-    ; rm -rf /newopt/man                                   \\
-    ; find /newopt/ -type f -name '.packlist' |xargs rm -f \\
-    ; find /newopt/ -type f -name '.pc'       |xargs rm -f \\
-    ; find /newopt/ -type f -name '.h'        |xargs rm -f \\
-    ; find /newopt/ -type f -name '.pod'      |xargs rm -f \\
+RUN   rm -rf \$DESTDIR/opt/site_perl/share                     \\
+    ; rm -rf \$DESTDIR/opt/site_perl/man                       \\
+    ; rm -rf \$DESTDIR/opt/lib                                 \\
+    ; find   \$DESTDIR/ -type f -name '.packlist' |xargs rm -f \\
+    ; find   \$DESTDIR/ -type f -name '.pc'       |xargs rm -f \\
+    ; find   \$DESTDIR/ -type f -name '.h'        |xargs rm -f \\
+    ; find   \$DESTDIR/ -type f -name '.pod'      |xargs rm -f \\
     ; exit 0
 FROM scratch
-COPY --from=my-perl-d /newopt/ /
+COPY --from=my-perl-d /newopt/opt/ /
 EOdockerfile
     close($d_fh)
         or die "Error closing $docker_fn: $!\n";

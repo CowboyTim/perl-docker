@@ -14,22 +14,7 @@ $ENV{REMOTE_DOCKER_REGISTRY} //= $ENV{DOCKER_LOCAL};
 $ENV{DOCKER_REPOSITORY}      //= $ENV{DOCKER_LOCAL}.'/'.$ENV{DOCKER_REGISTRY};
 
 foreach my $cpan_to_add (@ARGV){
-    my $docker_cpan_tag = lc($cpan_to_add =~ s/::/-/gr);
-    my $d_dir = "$FindBin::Bin/dockers/perl:$docker_cpan_tag";
-    print STDERR "checking for $d_dir\n";
-    if(-d $d_dir){
-        local $ENV{LATEST_TAG} = "";
-        system("make -C $FindBin::Bin build_docker.perl:$docker_cpan_tag") == 0
-            or die $!;
-    } else {
-        build_cpan_docker($cpan_to_add, $docker_cpan_tag);
-    }
-}
-
-our $cfg_loaded;
-sub build_cpan_docker {
-    my ($cpan_to_add, $docker_cpan_tag) = @_;
-
+    # get some details
     my @cpan_details = `cpan -D $cpan_to_add`;
     my ($tarball_version, $cpan_version);
     while(defined(my $l = shift @cpan_details)){
@@ -43,11 +28,32 @@ sub build_cpan_docker {
             next
         }
     }
-
     die "No cpan $cpan_to_add found\n"
         unless $tarball_version and $cpan_version;
-
+    my $docker_cpan_tag = lc($cpan_to_add =~ s/::/-/gr);
     print STDERR "will tag the docker image for $cpan_to_add with $docker_cpan_tag-$cpan_version\n";
+
+    # build docker via make?
+    my $d_dir = "$FindBin::Bin/dockers/perl:$docker_cpan_tag";
+    print STDERR "checking for $d_dir\n";
+    if(-d $d_dir){
+        local $ENV{LATEST_TAG} = "-$cpan_version";
+        system("make -C $FindBin::Bin build_docker.perl:$docker_cpan_tag") == 0
+            or die $!;
+    } else {
+        build_cpan_docker($cpan_to_add, $docker_cpan_tag, $tarball_version, $cpan_version);
+    }
+
+    # put extra tags
+    system("docker tag $ENV{DOCKER_REPOSITORY}/perl:$docker_cpan_tag-$cpan_version ".
+                      "$ENV{DOCKER_REPOSITORY}/perl:$docker_cpan_tag") == 0 or die $!;
+    system("docker tag $ENV{DOCKER_REPOSITORY}/perl:$docker_cpan_tag-$cpan_version ".
+                      "$ENV{DOCKER_REGISTRY}/perl:$docker_cpan_tag") == 0 or die $!;
+}
+
+our $cfg_loaded;
+sub build_cpan_docker {
+    my ($cpan_to_add, $docker_cpan_tag, $tarball_version, $cpan_version) = @_;
 
     # make a temp dir + Dockerfile
     my $tdir = "/tmp/dockerize_cpan_${$}_$ENV{USER}";
@@ -103,8 +109,7 @@ EOdockerfile
     system(
          "docker build $tdir -f $tdir/Dockerfile"
         ." --cache-from $ENV{DOCKER_REPOSITORY}/perl:$docker_cpan_tag-$perl_version_tag"
-        ." --tag $ENV{DOCKER_REPOSITORY}/perl:$docker_cpan_tag"
-        ." --tag $ENV{DOCKER_REGISTRY}/perl:$docker_cpan_tag"
+        ." --tag $ENV{DOCKER_REPOSITORY}/perl:$docker_cpan_tag-$cpan_version"
         ." --tag $ENV{DOCKER_REGISTRY}/perl:$docker_cpan_tag-$cpan_version"
     ) == 0 or die $!;
 

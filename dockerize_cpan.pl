@@ -26,8 +26,28 @@ foreach my $cpan_to_add (@ARGV){
     }
 }
 
+our $cfg_loaded;
 sub build_cpan_docker {
     my ($cpan_to_add, $docker_cpan_tag) = @_;
+
+    my @cpan_details = `cpan -D $cpan_to_add`;
+    my ($tarball_version, $cpan_version);
+    while(defined(my $l = shift @cpan_details)){
+        print STDERR $l;
+        if($l =~ /CPAN:\s+(\S+)\s+/){
+            $cpan_version = $1;
+            next
+        }
+        if($l =~ /(\S+\.tar\.gz)/){
+            $tarball_version = $1;
+            next
+        }
+    }
+
+    die "No cpan $cpan_to_add found\n"
+        unless $tarball_version and $cpan_version;
+
+    print STDERR "will tag the docker image for $cpan_to_add with $docker_cpan_tag-$cpan_version\n";
 
     # make a temp dir + Dockerfile
     my $tdir = "/tmp/dockerize_cpan_${$}_$ENV{USER}";
@@ -63,7 +83,7 @@ ENV PERL5LIB=\\
 /opt/lib/perl5/$perl_version/x86_64:\\
 /opt/lib/perl5/$perl_version/x86_64/auto
 RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti \\
-    $cpan_to_add \\
+    $tarball_version \\
     ; exit 0
 RUN   rm -rf \$DESTDIR/opt/site_perl/share                     \\
     ; rm -rf \$DESTDIR/opt/site_perl/man                       \\
@@ -85,6 +105,7 @@ EOdockerfile
         ." --cache-from $ENV{DOCKER_REPOSITORY}/perl:$docker_cpan_tag-$perl_version_tag"
         ." --tag $ENV{DOCKER_REPOSITORY}/perl:$docker_cpan_tag"
         ." --tag $ENV{DOCKER_REGISTRY}/perl:$docker_cpan_tag"
+        ." --tag $ENV{DOCKER_REGISTRY}/perl:$docker_cpan_tag-$cpan_version"
     ) == 0 or die $!;
 
     unlink $docker_fn;

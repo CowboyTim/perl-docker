@@ -23,7 +23,7 @@ foreach my $cpan_to_add (@ARGV){
             $cpan_version = $1;
             next
         }
-        if($l =~ /(\S+\.tar\.gz)/){
+        if($l =~ /(\S+\.(?:tar\.gz|tgz))/){
             $tarball_version = $1;
             next
         }

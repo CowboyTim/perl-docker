@@ -29,6 +29,19 @@ installed symlinks in /opt/bin. This is needed as e.g. /opt/bin/sh and
 
 This project is maintained on github here: [perl-docker](https://github.com/CowboyTim/perl-docker)
 
+# Tags/Images
+
+Currently these tags are supported:
+
+full runtime (~60MB):
+* `aardbeiplantje/perl:5.32.0`
+* `aardbeiplantje/perl:5.32.0-latest`
+* `aardbeiplantje/perl:latest`
+
+full OS dev for extending perl (~1.5GB):
+* `aardbeiplantje/5.32.0-dev-latest`
+
+
 # Quick reference
 
 You can use this perl docker like this:
@@ -56,16 +69,6 @@ To run external scripts, for instance:
 Or:
 
     $ docker run -it --rm -v $PWD:/opt/scripts aardbeiplantje/perl /opt/scripts/hello_world.pl
-
-# Images
-
-full runtime (~60MB):
-* `aardbeiplantje/perl:5.32.0`
-* `aardbeiplantje/perl:5.32.0-latest`
-* `aardbeiplantje/perl:latest`
-
-full OS dev for extending perl (~1.5GB):
-* `aardbeiplantje/5.32.0-dev-latest`
 
 # Environment variables
 

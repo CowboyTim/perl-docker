@@ -27,7 +27,10 @@ The perl distribution also contains busybox from the busybox docker and
 installed symlinks in /opt/bin. This is needed as e.g. /opt/bin/sh and
 /opt/bin/less is used by perldoc to show documentation.
 
-This project is maintained on github here: [perl-docker](https://github.com/CowboyTim/perl-docker)
+# Links
+
+This project is maintained on github: [CowboyTim/perl-docker](https://github.com/CowboyTim/perl-docker)
+This docker can be fetched from docker hub: [aardbeiplantje/perl](https://hub.docker.com/r/aardbeiplantje/perl)
 
 # Tags/Images
 

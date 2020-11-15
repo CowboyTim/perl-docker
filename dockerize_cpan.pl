@@ -90,8 +90,7 @@ ENV PERL5LIB=\\
 /opt/lib/perl5/$perl_version/x86_64/auto
 RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti \\
     $tarball_version \\
-    ; exit 0
-RUN   rm -rf \$DESTDIR/opt/site_perl/share                     \\
+    ; rm -rf \$DESTDIR/opt/site_perl/share                     \\
     ; rm -rf \$DESTDIR/opt/site_perl/man                       \\
     ; rm -rf \$DESTDIR/opt/lib                                 \\
     ; find   \$DESTDIR/ -type f -name '.packlist' |xargs rm -f \\

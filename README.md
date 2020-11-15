@@ -47,11 +47,25 @@ full OS dev for extending perl (~1.5GB):
 
 # Quick reference
 
-You can use this perl docker like this:
+When you run the perl docker without arguments, it reads from stdin perl code:
+
+    $ docker run -it --rm aardbeiplantje/perl
+    ...
+
+To run a perl script from stdin, docker needs to be run without the -t option
+though, so for instance:
+
+    $ docker run -i --rm aardbeiplantje/perl < ./hello_world.pl
+
+This is better done via the -v option:
+
+    $ docker run -it --rm -v $PWD:/opt/scripts aardbeiplantje/perl /opt/scripts/hello_world.pl
+
+You can use this perl docker also to run -e '' snippets:
 
     $ docker run -it --rm aardbeiplantje/perl -MConfig -we 'print $Config{version}."\n"'
 
-Similar, other tools can be run like this:
+Similar, other tools can be run:
 
     $ docker run -it --rm aardbeiplantje/perl -e 'exec @ARGV' perldoc -f sysopen
     $ docker run -it --rm aardbeiplantje/perl -e 'exec @ARGV' perldoc perlguts
@@ -65,13 +79,6 @@ for instance list what's in the docker:
 
     $ docker run -it --rm aardbeiplantje/perl -e 'exec @ARGV' find / -xdev
 
-To run external scripts, for instance:
-
-    $ docker run -i --rm aardbeiplantje/perl < ./hello_world.pl
-
-Or:
-
-    $ docker run -it --rm -v $PWD:/opt/scripts aardbeiplantje/perl /opt/scripts/hello_world.pl
 
 # Environment variables
 

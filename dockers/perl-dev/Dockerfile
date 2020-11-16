@@ -53,6 +53,8 @@ RUN    mkdir -p                             /opt/lib64/ \
     && cp -a /usr/lib64/ld-2*.so            /opt/lib64/ \
     && cp -a /lib64/ld-linux-x86-64*.so*    /opt/lib64/ \
     && cp -a /usr/lib64/libpthread*.so*     /opt/lib64/ \
+    && cp -a /usr/lib64/librt.so*           /opt/lib64/ \
+    && cp -a /usr/lib64/librt-*.so          /opt/lib64/ \
     && cp -a /usr/lib64/libdl*.so*          /opt/lib64/ \
     && cp -a /usr/lib64/libcrypt.so*        /opt/lib64/ \
     && cp -a /usr/lib64/libcrypt-*.so*      /opt/lib64/ \
@@ -72,6 +74,7 @@ RUN    mkdir -p                             /opt/lib64/ \
     && rm /opt/lib64/libc.so             && (cd /opt/lib64 && ln -s libc.so.6         libc.so)       \
     && rm /opt/lib64/libm.so             && (cd /opt/lib64 && ln -s libm.so.6         libm.so)       \
     && rm /opt/lib64/libpthread.so       && (cd /opt/lib64 && ln -s libpthread.so.0   libpthread.so) \
+    && rm /opt/lib64/librt.so            && (cd /opt/lib64 && ln -s librt.so.1        librt.so)      \
     && cp -a /usr/lib64/libgdbm*            /opt/lib64/ \
     && cp -a /usr/lib64/libdb.so*           /opt/lib64/ \
     && cp -a /usr/lib64/libdb-*.so*         /opt/lib64/

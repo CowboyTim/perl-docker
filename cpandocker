@@ -39,6 +39,14 @@ sub read_cfg {
     return;
 }
 
+sub get_cfg {
+    my ($cpan_module) = @_;
+    foreach my $cpn (@{$cfg->{cpans}//[]}){
+        return $cpn if $cpn->{name} eq $cpan_module;
+    }
+    return
+}
+
 our $_json_enc;
 sub save_cfg {
     my $cpan_docker_home   = $ENV{CPAN_DOCKER_HOME}   ||= "$FindBin::Bin/";
@@ -111,6 +119,21 @@ sub cpan_rebuildall {
     return;
 }
 
+sub cpan_versionall {
+    foreach my $cpan_module (@{$cfg->{cpans}//[]}){
+        do_cpan_version_check($cpan_module);
+    }
+    return;
+}
+
+sub cpan_version {
+    my (@cpans) = @_;
+    foreach my $cpan_module (@cpans){
+        do_cpan_version_check(get_cfg($cpan_module));
+    }
+    return;
+}
+
 sub cpan_pushall {
     foreach my $cpan_module (@{$cfg->{cpans}//[]}){
         do_cpan_docker_push($cpan_module->{name});
@@ -164,6 +187,40 @@ sub get_cpan_information {
             "$docker_cpan_tag-$cpan_version",
         ]
     }
+}
+
+sub do_cpan_version_check {
+    my ($cpn) = @_;
+    local ($!,$?);
+    my $tdir = "/tmp/cpan_test_${$}_$ENV{USER}";
+    mkdir($tdir) or die "Error making dir $tdir: $!\n";
+    print STDERR "using $tdir/Dockerfile\n";
+    $! = 0;
+
+    # Dockerfile
+    my $docker_cpan_ref = "$ENV{DOCKER_REPOSITORY}/perl:cpan-$cpn->{tag}[1]";
+    my $perl_version    = $ENV{PERL_VERSION};
+    my $tmpdockername   = "tmpperlcpanapp-$$";
+    my $docker_fn       = "$tdir/Dockerfile";
+    open(my $d_fh, '>', $docker_fn)
+        or die "Error opening $docker_fn: $!\n";
+    print {$d_fh} <<EOdockerfile;
+FROM $ENV{DOCKER_REGISTRY}/perl:$ENV{DOCKER_PERL_TAG} as tmpapp-01
+FROM $ENV{DOCKER_REGISTRY}/perl:cpan-$cpn->{tag}[0]   as tmpapp-02
+FROM scratch
+COPY --from=tmpapp-01 / /
+COPY --from=tmpapp-02 / /
+ENTRYPOINT ["/opt/bin/perl"]
+EOdockerfile
+    $! = 0;
+    system("docker build $tdir -f $tdir/Dockerfile --tag $tmpdockername")
+        == 0 or die "problem building the $tmpdockername, quitting: $!\n";
+    $! = 0;
+    system("docker run --rm -it $tmpdockername -M$cpn->{name} -we 'print \"[$cpn->{name}] VERSION: \$".$cpn->{name}."::VERSION\\n\"'")
+        == 0 or die pretty_string_cpan($cpn)." FAILED: $!\n";
+    unlink $docker_fn;
+    rmdir $tdir;
+    return;
 }
 
 sub do_cpan_docker_build {

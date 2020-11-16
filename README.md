@@ -1,27 +1,31 @@
 # Introduction
 
-This is a PERL docker.
-
 This perl is built to be used just as a docker that only contains perl. The
 perl distribution is installed in /opt and is a vanilla perl install. All bin
-scripts and binaries within a typical perl distribution are installed.
+scripts and binaries within a typical perl distribution are installed, together
+with some extra external binaries and libraries that are needed to have a fully
+working perl distribution.
 
-The operating system this perl was built against is not part of this docker,
-instead, the glibc version is compied to /opt/lib64. This has a couple of
-advantages and disadvantages:
+The operating system this perl was built against is Amazon Linux 2 and is not
+part of this docker, instead, the glibc version where perl is built against is
+copied to /opt/lib64.
 
+This has a couple of advantages and disadvantages:
 * the size is very small and to the point: ~60MB
 * size can be reduced even more for pure runtime perl dockers: ~34MB
 * only 1 perl in the docker image
-* you can't add cpan modules in the docker itself
+* you can't add cpan modules in the docker itself (but there's a perl-dev docker image)
 
-The restriction of cpan building can easily be fixed by making a new docker
-where you combine this with the original OS and add cpan modules again. This is
-probably even the normal case, as one will use this perl docker as a base to
-create new dockers with the tools needed to run the application, and this isn't
-limited to perl and cpan, but can as well be unix tools and other languages.
+The restriction of not being able to add CPAN modules from cpan can easily be
+fixed by making a new docker where you combine the perl docker with the
+original OS docker and install the tools to add cpan modules.  Note that adding
+modules is always possible when doing this manually in the case the module is a
+PurePerl module, but there is no make installed.
 
-Currently, Amazon Linux 2 was used to make this build.
+This is probably even the normal case, as one will use this perl docker as a
+base to create new dockers with the tools needed to run the application, and
+this isn't limited to perl and cpan and can as well be unix tools and other
+languages.
 
 The perl distribution also contains busybox from the busybox docker and
 installed symlinks in /opt/bin. This is needed as e.g. /opt/bin/sh and
@@ -50,7 +54,10 @@ full OS dev for extending perl (~1.5GB):
 When you run the perl docker without arguments, it reads from stdin perl code:
 
     $ docker run -it --rm aardbeiplantje/perl
-    ...
+    print "Hello World!\n";
+    <ctrl-D>
+    Hello World!
+    $
 
 To run a perl script from stdin, docker needs to be run without the -t option
 though, so for instance:

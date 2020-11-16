@@ -74,9 +74,29 @@ sub cpan_build {
 }
 
 sub cpan_rebuildall {
-    foreach my $cpan_there (@{$cfg->{cpans}//[]}){
-        do_cpan_docker_build($cpan_there);
+    foreach my $cpan_module (@{$cfg->{cpans}//[]}){
+        do_cpan_docker_build($cpan_module);
     }
+    return;
+}
+
+sub cpan_pushall {
+    foreach my $cpan_module (@{$cfg->{cpans}//[]}){
+        do_cpan_docker_push($cpan_module);
+    }
+    return;
+}
+
+sub cpan_push {
+    foreach my $cpan_module (@ARGV){
+        do_cpan_docker_push($cpan_module);
+    }
+    return;
+}
+
+sub do_cpan_docker_push {
+    my ($cpan_to_push) = @_;
+    # FIXME: implement!
     return;
 }
 
@@ -121,7 +141,6 @@ sub do_cpan_docker_build {
     return;
 }
 
-our $cfg_loaded;
 sub build_cpan_docker {
     my ($cpan_to_add, $docker_cpan_tag, $tarball_version, $cpan_version) = @_;
 
@@ -213,7 +232,7 @@ EOdockerfile
 
 sub print_usage {
     print <<EOusage;
-usage: $0 <add|build|push|list|rebuildall> <cpan module> [<cpan module>,...]
+usage: $0 <add|build|push|list|rebuildall|pushall> <cpan module> [<cpan module>,...]
 EOusage
     exit 1;
 }

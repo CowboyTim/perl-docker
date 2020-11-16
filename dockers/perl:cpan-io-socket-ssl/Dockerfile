@@ -1,18 +1,22 @@
+ARG perl_version=5.32.0
+
 # start from the perl-dev docker
-FROM aardbeiplantje/perl:5.32.0-dev-latest as my-perl-d
+FROM aardbeiplantje/perl:${perl_version}-dev-latest as my-perl-d
 
 # reset the PATH to not include /opt first
-ENV perl_version=5.32.0
+ARG perl_version=5.32.0
+ENV perl_version=${perl_version}
 ENV PATH=/bin:/sbin:/usr/bin:/usr/sbin:$PATH
 ENV DESTDIR=/newopt/
 ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/$perl_version/x86_64/CORE
 
-# dev stuff can go in my-perl-d in /
-RUN yum install -y \
-        openssl openssl-devel
-
-# copy over extra libraries that are needed for ssl
-RUN    mkdir -p                             $DESTDIR/opt/lib64/ \
+# install ssl libraries + copy them over to /opt/lib64
+RUN yum install -y                                              \
+        openssl                                                 \
+        openssl-devel                                           \
+    && yum clean all                                            \
+    && rm -rf /var/lib/yum/repos                                \
+    && mkdir -p                             $DESTDIR/opt/lib64/ \
     && cp -a /usr/lib64/libssl.so*          $DESTDIR/opt/lib64/ \
     && cp -a /usr/lib64/libgssapi_krb5.so*  $DESTDIR/opt/lib64/ \
     && cp -a /usr/lib64/libcom_err.so*      $DESTDIR/opt/lib64/ \
@@ -51,21 +55,10 @@ $DESTDIR/opt/site_perl/lib/perl5/site_perl/$perl_version/x86_64-linux/auto:\
 /opt/lib/perl5/$perl_version/x86_64/auto
 
 # add a cpan module with the provided cpan config
-RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti \
-    IO::Socket::SSL         \
-    ; exit 0
-
-#
-# RUNTIME:
-#
-# cleanup stuff in /opt we never will need. This of course needs to be double
-# checked when adding things, sometimes things are actually needed for the app
-# to work
-#
-# when this is ment as a development style perl docker with the extra cpan/libs
-# installed, these might be kept as they contain valuable documentation
-#
-RUN   rm -rf $DESTDIR/opt/site_perl/share                     \
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti    \
+    IO::Socket::SSL                                           \
+    URI                                                       \
+    ; rm -rf $DESTDIR/opt/site_perl/share                     \
     ; rm -rf $DESTDIR/opt/site_perl/man                       \
     ; rm -rf $DESTDIR/opt/lib                                 \
     ; find   $DESTDIR/ -type f -name '.packlist' |xargs rm -f \
@@ -73,6 +66,26 @@ RUN   rm -rf $DESTDIR/opt/site_perl/share                     \
     ; find   $DESTDIR/ -type f -name '.h'        |xargs rm -f \
     ; find   $DESTDIR/ -type f -name '.pod'      |xargs rm -f \
     ; exit 0
+
+# a simple test
+RUN /opt/bin/perl -MIO::Socket::SSL -we \
+    'print "[OK] CPAN TEST 1 IO::Socket::SSL built, version: $IO::Socket::SSL::VERSION\n"'
+RUN /opt/bin/perl -MURI -we \
+    'print "[OK] CPAN TEST 1 URI built, version: $URI::VERSION\n"'
+
+# start a new scratch with runtime perl and move to / just to test (without PERL5LIB set!)
+FROM aardbeiplantje/perl:${perl_version} as test-perl-cpan
+FROM scratch
+COPY --from=my-perl-d /newopt/opt/ /
+COPY --from=test-perl-cpan / /
+ENV DESTDIR=
+ENV INSTALL_BASE=
+ENV LD_LIBRARY_PATH=
+ENV PERL5LIB=
+RUN /opt/bin/perl -MIO::Socket::SSL -we \
+    'print "[OK] CPAN TEST 1 IO::Socket::SSL built, version: $IO::Socket::SSL::VERSION\n"'
+RUN /opt/bin/perl -MURI -we \
+    'print "[OK] CPAN TEST 1 URI built, version: $URI::VERSION\n"'
 
 # squash the docker, by starting from scratch
 FROM scratch

@@ -57,6 +57,3 @@ build_docker.%:
 			--tag $(DOCKER_REPOSITORY)/$*$(LATEST_TAG) \
 			--tag $(DOCKER_REGISTRY)/$*$(LATEST_TAG) \
 			$(EXTRA_DOCKER_OPTS)
-
-build_cpan_docker.%:
-		perl ./dockerize_cpan.pl $*

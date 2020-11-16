@@ -1,0 +1,21 @@
+{
+   "cpans" : [
+      "Crypt::CBC",
+      "Digest::SHA",
+      "HTTP::Date",
+      "IO::Socket::SSL",
+      "JSON",
+      "JSON::PP",
+      "JSON::XS",
+      "LWP::UserAgent",
+      "Storable",
+      "Text::CSV_XS",
+      "XML::SAX",
+      "XML::Writer",
+      "XML::Reader",
+      "URI",
+      "Socket6",
+      "XML::LibXML",
+      "XML::Simple"
+   ]
+}

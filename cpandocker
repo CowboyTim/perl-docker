@@ -22,6 +22,10 @@ sub read_cfg {
     my $cpan_docker_home   = $ENV{CPAN_DOCKER_HOME}   ||= "$FindBin::Bin/";
     my $cpan_docker_cfg_fn = $ENV{CPAN_DOCKER_CONFIG} ||= "$cpan_docker_home/.cpandocker.json";
     $cfg = decode_json(do {local(@ARGV,$/)=$cpan_docker_cfg_fn;<>});
+    if(($cfg->{version}//'') ne '1'){
+        cpan_cfgsync();
+        save_cfg();
+    }
 
     # config/defaults
     my $perl_version = 
@@ -48,47 +52,75 @@ sub save_cfg {
     return;
 }
 
+sub cpan_cfgsync {
+    my @new_cpans;
+    foreach my $cpn (@{$cfg->{cpans}//[]}){
+        push @new_cpans, scalar get_cpan_information($cpn->{name});
+    }
+    $cfg->{cpans}   = \@new_cpans;
+    $cfg->{version} = 1;
+    return;
+}
+
 sub cpan_list {
-    print join("\n", sort @{$cfg->{cpans}//[]})."\n";
+    foreach my $cpn (@{$cfg->{cpans}//[]}){
+        print pretty_string_cpan($cpn);
+    }
+    return;
+}
+
+sub cpan_info {
+    foreach my $cpn (@{$cfg->{cpans}//[]}){
+        print pretty_string_cpan(scalar get_cpan_information($cpn->{name}));
+    }
     return;
 }
 
 sub cpan_add {
-    my @cpans_to_build = @_;
+    my (@cpans) = @_;
     my @cpans_ok;
-    foreach my $cpan_to_add (@cpans_to_build){
-        do_cpan_docker_build($cpan_to_add);
-        push @cpans_ok, $cpan_to_add;
+    foreach my $cpn (@cpans){
+        my ($cpan_version, $tarball_version, $docker_cpan_tag) = do_cpan_docker_build($cpn);
+        push @cpans_ok, {
+            name    => $cpn,
+            version => $cpan_version,
+            tarball => $tarball_version, 
+            tag     => [
+                $docker_cpan_tag,
+                "$docker_cpan_tag-$cpan_version",
+            ]
+        };
     }
     push @{$cfg->{cpans}}, @cpans_ok;
-    save_cfg() if @cpans_ok == @cpans_to_build;
+    save_cfg() if @cpans_ok == @cpans;
     return;
 }
 
 sub cpan_build {
-    my (@cpans_to_build) = @_;
-    foreach my $cpan_to_build (@cpans_to_build){
-        do_cpan_docker_build($cpan_to_build);
+    my (@cpans) = @_;
+    foreach my $cpan_module (@cpans){
+        do_cpan_docker_build($cpan_module);
     }
     return;
 }
 
 sub cpan_rebuildall {
     foreach my $cpan_module (@{$cfg->{cpans}//[]}){
-        do_cpan_docker_build($cpan_module);
+        do_cpan_docker_build($cpan_module->{name});
     }
     return;
 }
 
 sub cpan_pushall {
     foreach my $cpan_module (@{$cfg->{cpans}//[]}){
-        do_cpan_docker_push($cpan_module);
+        do_cpan_docker_push($cpan_module->{name});
     }
     return;
 }
 
 sub cpan_push {
-    foreach my $cpan_module (@ARGV){
+    my (@cpans) = @_;
+    foreach my $cpan_module (@cpans){
         do_cpan_docker_push($cpan_module);
     }
     return;
@@ -100,9 +132,13 @@ sub do_cpan_docker_push {
     return;
 }
 
-sub do_cpan_docker_build {
+sub pretty_string_cpan {
+    my ($cpn) = @_;
+    return sprintf "%-25s %6s  %-50s %-50s\n", "[$cpn->{name}]", $cpn->{version}, $cpn->{tarball}, join(',', @{$cpn->{tag}//[]});
+}
+
+sub get_cpan_information {
     my ($cpan_to_add) = @_;
-    # get some details
     my @cpan_details = `cpan -D $cpan_to_add`;
     my ($tarball_version, $cpan_version);
     while(defined(my $l = shift @cpan_details)){
@@ -119,6 +155,21 @@ sub do_cpan_docker_build {
     die "No cpan $cpan_to_add found\n"
         unless $tarball_version and $cpan_version;
     my $docker_cpan_tag = lc($cpan_to_add =~ s/::/-/gr);
+    return wantarray?($cpan_to_add, $cpan_version, $tarball_version, $docker_cpan_tag):{
+        name    => $cpan_to_add,
+        version => $cpan_version,
+        tarball => $tarball_version, 
+        tag     => [
+            $docker_cpan_tag,
+            "$docker_cpan_tag-$cpan_version",
+        ]
+    }
+}
+
+sub do_cpan_docker_build {
+    my ($cpan_to_add) = @_;
+    # get some details
+    my ($_d, $cpan_version, $tarball_version, $docker_cpan_tag) = get_cpan_information($cpan_to_add);
     print STDERR "will tag the docker image for $cpan_to_add with $docker_cpan_tag-$cpan_version\n";
 
     # build docker via make?
@@ -138,7 +189,7 @@ sub do_cpan_docker_build {
     system("docker tag $ENV{DOCKER_REPOSITORY}/perl:cpan-$docker_cpan_tag-$cpan_version ".
                       "$ENV{DOCKER_REGISTRY}/perl:cpan-$docker_cpan_tag") == 0 or die $!;
 
-    return;
+    return ($cpan_version, $tarball_version, $docker_cpan_tag);
 }
 
 sub build_cpan_docker {

@@ -1,21 +1,176 @@
 {
+   "version" : "1",
    "cpans" : [
-      "Crypt::CBC",
-      "Digest::SHA",
-      "HTTP::Date",
-      "IO::Socket::SSL",
-      "JSON",
-      "JSON::PP",
-      "JSON::XS",
-      "LWP::UserAgent",
-      "Storable",
-      "Text::CSV_XS",
-      "XML::SAX",
-      "XML::Writer",
-      "XML::Reader",
-      "URI",
-      "Socket6",
-      "XML::LibXML",
-      "XML::Simple"
+      {
+         "tag" : [
+            "crypt-cbc",
+            "crypt-cbc-2.33"
+         ],
+         "name" : "Crypt::CBC",
+         "tarball" : "L/LD/LDS/Crypt-CBC-2.33.tar.gz",
+         "version" : "2.33"
+      },
+      {
+         "version" : "6.02",
+         "tarball" : "M/MS/MSHELOR/Digest-SHA-6.02.tar.gz",
+         "name" : "Digest::SHA",
+         "tag" : [
+            "digest-sha",
+            "digest-sha-6.02"
+         ]
+      },
+      {
+         "tarball" : "O/OA/OALDERS/HTTP-Date-6.05.tar.gz",
+         "tag" : [
+            "http-date",
+            "http-date-6.05"
+         ],
+         "name" : "HTTP::Date",
+         "version" : "6.05"
+      },
+      {
+         "tarball" : "S/SU/SULLR/IO-Socket-SSL-2.068.tar.gz",
+         "tag" : [
+            "io-socket-ssl",
+            "io-socket-ssl-2.068"
+         ],
+         "name" : "IO::Socket::SSL",
+         "version" : "2.068"
+      },
+      {
+         "version" : "4.02",
+         "tarball" : "I/IS/ISHIGAKI/JSON-4.02.tar.gz",
+         "name" : "JSON",
+         "tag" : [
+            "json",
+            "json-4.02"
+         ]
+      },
+      {
+         "tarball" : "I/IS/ISHIGAKI/JSON-PP-4.05.tar.gz",
+         "tag" : [
+            "json-pp",
+            "json-pp-4.05"
+         ],
+         "name" : "JSON::PP",
+         "version" : "4.05"
+      },
+      {
+         "name" : "JSON::XS",
+         "tarball" : "M/ML/MLEHMANN/JSON-XS-4.03.tar.gz",
+         "tag" : [
+            "json-xs",
+            "json-xs-4.03"
+         ],
+         "version" : "4.03"
+      },
+      {
+         "tag" : [
+            "lwp-useragent",
+            "lwp-useragent-6.49"
+         ],
+         "name" : "LWP::UserAgent",
+         "tarball" : "O/OA/OALDERS/libwww-perl-6.49.tar.gz",
+         "version" : "6.49"
+      },
+      {
+         "tarball" : "X/XS/XSAWYERX/Storable-3.15.tar.gz",
+         "name" : "Storable",
+         "tag" : [
+            "storable",
+            "storable-3.15"
+         ],
+         "version" : "3.15"
+      },
+      {
+         "tarball" : "H/HM/HMBRAND/Text-CSV_XS-1.44.tgz",
+         "name" : "Text::CSV_XS",
+         "tag" : [
+            "text-csv_xs",
+            "text-csv_xs-1.44"
+         ],
+         "version" : "1.44"
+      },
+      {
+         "version" : "1.02",
+         "tarball" : "G/GR/GRANTM/XML-SAX-1.02.tar.gz",
+         "name" : "XML::SAX",
+         "tag" : [
+            "xml-sax",
+            "xml-sax-1.02"
+         ]
+      },
+      {
+         "version" : "0.900",
+         "tag" : [
+            "xml-writer",
+            "xml-writer-0.900"
+         ],
+         "tarball" : "J/JO/JOSEPHW/XML-Writer-0.900.tar.gz",
+         "name" : "XML::Writer"
+      },
+      {
+         "version" : "0.67",
+         "name" : "XML::Reader",
+         "tarball" : "K/KE/KEICHNER/XML-Reader-0.67.tar.gz",
+         "tag" : [
+            "xml-reader",
+            "xml-reader-0.67"
+         ]
+      },
+      {
+         "version" : "5.05",
+         "tarball" : "O/OA/OALDERS/URI-5.05.tar.gz",
+         "name" : "URI",
+         "tag" : [
+            "uri",
+            "uri-5.05"
+         ]
+      },
+      {
+         "tarball" : "U/UM/UMEMOTO/Socket6-0.29.tar.gz",
+         "tag" : [
+            "socket6",
+            "socket6-0.29"
+         ],
+         "name" : "Socket6",
+         "version" : "0.29"
+      },
+      {
+         "tag" : [
+            "xml-libxml",
+            "xml-libxml-2.0206"
+         ],
+         "tarball" : "S/SH/SHLOMIF/XML-LibXML-2.0206.tar.gz",
+         "name" : "XML::LibXML",
+         "version" : "2.0206"
+      },
+      {
+         "tarball" : "G/GR/GRANTM/XML-Simple-2.25.tar.gz",
+         "name" : "XML::Simple",
+         "tag" : [
+            "xml-simple",
+            "xml-simple-2.25"
+         ],
+         "version" : "2.25"
+      },
+      {
+         "name" : "IO::All",
+         "tag" : [
+            "io-all",
+            "io-all-0.87"
+         ],
+         "tarball" : "F/FR/FREW/IO-All-0.87.tar.gz",
+         "version" : "0.87"
+      },
+      {
+         "tarball" : "C/CA/CAPOEIRAB/HTML-Parser-3.75.tar.gz",
+         "tag" : [
+            "html-parser",
+            "html-parser-3.75"
+         ],
+         "name" : "HTML::Parser",
+         "version" : "3.75"
+      }
    ]
 }

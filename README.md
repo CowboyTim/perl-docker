@@ -33,8 +33,8 @@ installed symlinks in /opt/bin. This is needed as e.g. /opt/bin/sh and
 
 # Links
 
-This project is maintained on github: [CowboyTim/perl-docker](https://github.com/CowboyTim/perl-docker)
-This docker can be fetched from docker hub: [aardbeiplantje/perl](https://hub.docker.com/r/aardbeiplantje/perl)
+* This project is maintained on github: [CowboyTim/perl-docker](https://github.com/CowboyTim/perl-docker)
+* This docker can be fetched from docker hub: [aardbeiplantje/perl](https://hub.docker.com/r/aardbeiplantje/perl)
 
 # Tags/Images
 
@@ -86,7 +86,6 @@ for instance list what's in the docker:
 
     $ docker run -it --rm aardbeiplantje/perl -e 'exec @ARGV' find / -xdev
 
-
 # Environment variables
 
 These are the environment variables defined within the docker by default to
@@ -113,9 +112,9 @@ To push to docker.io as docker registry, e.g.:
     $ export REMOTE_DOCKER_REPO=aardbeiplantje
     $ make docker_push_perl
 
-# Extending the docker image
+# Installing CPAN modules
 
-The docker image can be extened with other tools that you might need. Easiest
+The docker image can be extended with other tools that you might need. Easiest
 is to start from the `aardbeiplantje/perl:5.32.0-dev-latest` image as the CPAN
 config is already present. Most of the build utilities typically needed on a
 linux OS are also already preinstalled: make, gcc, tar, gzip,..
@@ -191,9 +190,9 @@ build into a docker that can be used as  a precompiled CPAN docker. Pure XS
 modules can be built, but when external libraries are needed, these need to be
 added as a seperate Dockerfile.
 
-To make a PurePerl CPAN module, the [dockerize_cpan.pl](https://github.com/CowboyTim/perl-docker/blob/docker/dockerize_cpan.pl) script can be used:
+To make a PurePerl CPAN module, the [cpandocker](https://github.com/CowboyTim/perl-docker/blob/docker/cpandocker) script can be used:
 
-    perl dockerize_cpan.pl JSON JSON::XS JSON::PP
+    $ ./cpandocker build JSON JSON::XS JSON::PP
 
 This will use the aardbeiplantje/perl:5.32.0-dev-latest docker to make 3
 different dockers, one for each cpan specified. Note that a cpan module can
@@ -204,9 +203,9 @@ include dependencies, those will also be added to that cpan docker at build.
 * make a trimmed runtime, although this is usually up to the needs of the project
 * make the docker cpan use the cpan module's version nr
 * tag all of the dockers with a git ref
-* allow for making layers that include more then 1 cpan module in dockerize_cpan.pl
+* allow for making layers that include more then 1 cpan module in `cpandocker`
 * find a way to automate the external library check
 * add a simple test for the built cpan module
-* make the dockerize_cpan.pl be ran with the aardbeiplantje/perl:5.32.0-dev-latest docker
+* make the `cpandocker` be ran with the aardbeiplantje/perl:5.32.0-dev-latest docker
 
 

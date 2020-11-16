@@ -3,18 +3,85 @@
 use strict; use warnings;
 
 use FindBin;
+use JSON;
 
-# config/defaults
-my $perl_version         = $ENV{PERL_VERSION}        ||= "5.32.0";
-my $perl_version_tag     = $ENV{DOCKER_PERL_TAG}     ||= "$perl_version";
-my $perl_dev_version_tag = $ENV{DOCKER_PERL_DEV_TAG} ||= "$perl_version-dev-latest";
+our $cfg  = {};
+our $what = shift @ARGV;
+print_usage() if !$what;
+read_cfg();
+{
+    no strict 'refs';
+    $what = "cpan_$what";
+    &$what(@ARGV);
+}
+exit 0;
 
-$ENV{DOCKER_LOCAL}           //= "docker_build_$ENV{USER}";
-$ENV{DOCKER_REGISTRY}        //= "aardbeiplantje";
-$ENV{REMOTE_DOCKER_REGISTRY} //= $ENV{DOCKER_LOCAL};
-$ENV{DOCKER_REPOSITORY}      //= $ENV{DOCKER_LOCAL}.'/'.$ENV{DOCKER_REGISTRY};
 
-foreach my $cpan_to_add (@ARGV){
+sub read_cfg {
+    # our config file
+    my $cpan_docker_home   = $ENV{CPAN_DOCKER_HOME}   ||= "$FindBin::Bin/";
+    my $cpan_docker_cfg_fn = $ENV{CPAN_DOCKER_CONFIG} ||= "$cpan_docker_home/.cpandocker.json";
+    $cfg = decode_json(do {local(@ARGV,$/)=$cpan_docker_cfg_fn;<>});
+
+    # config/defaults
+    my $perl_version = 
+    $ENV{PERL_VERSION}           //= $cfg->{perl_version}            // "5.32.0";
+    $ENV{DOCKER_PERL_TAG}        //= $cfg->{docker_perl_tag}         // "$perl_version";
+    $ENV{DOCKER_PERL_DEV_TAG}    //= $cfg->{docker_perl_dev_tag}     // "$perl_version-dev-latest";
+    $ENV{DOCKER_LOCAL}           //= $cfg->{docker_local}            // "docker_build_$ENV{USER}";
+    $ENV{DOCKER_REGISTRY}        //= $cfg->{docker_registry}         // "aardbeiplantje";
+    $ENV{REMOTE_DOCKER_REGISTRY} //= $cfg->{remote_docker_registry}  // $ENV{DOCKER_LOCAL};
+    $ENV{DOCKER_REPOSITORY}      //= $cfg->{docker_repository}       // $ENV{DOCKER_LOCAL}.'/'.$ENV{DOCKER_REGISTRY};
+    return;
+}
+
+our $_json_enc;
+sub save_cfg {
+    my $cpan_docker_home   = $ENV{CPAN_DOCKER_HOME}   ||= "$FindBin::Bin/";
+    my $cpan_docker_cfg_fn = $ENV{CPAN_DOCKER_CONFIG} ||= "$cpan_docker_home/.cpandocker.json";
+    $_json_enc //= JSON->new->utf8->allow_blessed->allow_unknown->allow_nonref->convert_blessed->pretty;
+    open(my $cfg_h, ">", $cpan_docker_cfg_fn)
+        or die "Error opening $cpan_docker_cfg_fn for write: $!\n";
+    print {$cfg_h} $_json_enc->encode($cfg);
+    close($cfg_h)
+        or die "Error opening $cpan_docker_cfg_fn for write: $!\n";
+    return;
+}
+
+sub cpan_list {
+    print join("\n", sort @{$cfg->{cpans}//[]})."\n";
+    return;
+}
+
+sub cpan_add {
+    my @cpans_to_build = @_;
+    my @cpans_ok;
+    foreach my $cpan_to_add (@cpans_to_build){
+        do_cpan_docker_build($cpan_to_add);
+        push @cpans_ok, $cpan_to_add;
+    }
+    push @{$cfg->{cpans}}, @cpans_ok;
+    save_cfg() if @cpans_ok == @cpans_to_build;
+    return;
+}
+
+sub cpan_build {
+    my (@cpans_to_build) = @_;
+    foreach my $cpan_to_build (@cpans_to_build){
+        do_cpan_docker_build($cpan_to_build);
+    }
+    return;
+}
+
+sub cpan_rebuildall {
+    foreach my $cpan_there (@{$cfg->{cpans}//[]}){
+        do_cpan_docker_build($cpan_there);
+    }
+    return;
+}
+
+sub do_cpan_docker_build {
+    my ($cpan_to_add) = @_;
     # get some details
     my @cpan_details = `cpan -D $cpan_to_add`;
     my ($tarball_version, $cpan_version);
@@ -50,6 +117,8 @@ foreach my $cpan_to_add (@ARGV){
                       "$ENV{DOCKER_REPOSITORY}/perl:cpan-$docker_cpan_tag") == 0 or die $!;
     system("docker tag $ENV{DOCKER_REPOSITORY}/perl:cpan-$docker_cpan_tag-$cpan_version ".
                       "$ENV{DOCKER_REGISTRY}/perl:cpan-$docker_cpan_tag") == 0 or die $!;
+
+    return;
 }
 
 our $cfg_loaded;
@@ -62,12 +131,13 @@ sub build_cpan_docker {
     print STDERR "using $tdir/Dockerfile\n";
 
     # Dockerfile
+    my $perl_version = $ENV{PERL_VERSION};
     my $docker_fn = "$tdir/Dockerfile";
     open(my $d_fh, '>', $docker_fn)
         or die "Error opening $docker_fn: $!\n";
     print {$d_fh} <<EOdockerfile;
 # start from the perl-dev docker
-FROM $ENV{DOCKER_REGISTRY}/perl:$perl_dev_version_tag as my-perl-d
+FROM $ENV{DOCKER_REGISTRY}/perl:$ENV{DOCKER_PERL_DEV_TAG} as my-perl-d
 
 # set some ENV vars, to be sure. Also, we will build in /newopt
 # so PERL5LIB has to contain that
@@ -109,7 +179,7 @@ RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti \\
 RUN /opt/bin/perl -M$cpan_to_add -we 'print "[OK] CPAN TEST 1 ${cpan_to_add} built, version: \$${cpan_to_add}::VERSION\\n"'
 
 # start a new scratch with runtime perl and move to / just to test (without PERL5LIB set!)
-FROM $ENV{DOCKER_REGISTRY}/perl:$perl_version_tag as test-perl-cpan
+FROM $ENV{DOCKER_REGISTRY}/perl:$ENV{DOCKER_PERL_TAG} as test-perl-cpan
 FROM scratch
 COPY --from=my-perl-d /newopt/opt/ /
 COPY --from=test-perl-cpan / /
@@ -128,14 +198,22 @@ EOdockerfile
         or die "Error closing $docker_fn: $!\n";
 
     # run docker build
+    local ($!,$?);
     system(
          "docker build $tdir -f $tdir/Dockerfile"
         ." --cache-from $ENV{DOCKER_REPOSITORY}/perl:cpan-$docker_cpan_tag-$cpan_version"
         ." --tag $ENV{DOCKER_REPOSITORY}/perl:cpan-$docker_cpan_tag-$cpan_version"
         ." --tag $ENV{DOCKER_REGISTRY}/perl:cpan-$docker_cpan_tag-$cpan_version"
-    ) == 0 or die $!;
+    ) == 0 or die "problem building the docker, quitting: $!\n";
 
     unlink $docker_fn;
     rmdir $tdir;
     return;
+}
+
+sub print_usage {
+    print <<EOusage;
+usage: $0 <add|build|push|list|rebuildall> <cpan module> [<cpan module>,...]
+EOusage
+    exit 1;
 }

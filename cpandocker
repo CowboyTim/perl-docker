@@ -205,7 +205,7 @@ sub do_cpan_version_check {
     # Dockerfile
     my $docker_cpan_ref = "$ENV{DOCKER_REPOSITORY}/perl:cpan-$cpn->{tag}[1]";
     my $perl_version    = $ENV{PERL_VERSION};
-    my $tmpdockername   = "tmpperlcpanapp-$$";
+    my $tmpdockername   = "tmpperlcpanapp-$$-$ENV{USER}-".lc($cpn->{name} =~ s/::/-/gr);
     my $docker_fn       = "$tdir/Dockerfile";
     open(my $d_fh, '>', $docker_fn)
         or die "Error opening $docker_fn: $!\n";
@@ -223,6 +223,9 @@ EOdockerfile
     $! = 0;
     system("docker run --rm -it $tmpdockername -M$cpn->{name} -we 'print \"[$cpn->{name}] VERSION: \$".$cpn->{name}."::VERSION\\n\"'")
         == 0 or die pretty_string_cpan($cpn)." FAILED: $!\n";
+    $! = 0;
+    system("docker image rm -f $tmpdockername")
+        == 0 or die "problem removing temp $tmpdockername: $!\n";
     unlink $docker_fn;
     rmdir $tdir;
     return;

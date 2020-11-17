@@ -65,7 +65,7 @@ sub cpan_cfgsync {
     foreach my $cpn (@{$cfg->{cpans}//[]}){
         push @new_cpans, scalar get_cpan_information($cpn->{name});
     }
-    $cfg->{cpans}   = \@new_cpans;
+    $cfg->{cpans}   = [sort {$a->{name} cmp $b->{name}} @new_cpans];
     $cfg->{version} = 1;
     return;
 }
@@ -86,10 +86,10 @@ sub cpan_info {
 
 sub cpan_add {
     my (@cpans) = @_;
-    my @cpans_ok;
+    my %cpans_to_add;
     foreach my $cpn (@cpans){
         my ($cpan_version, $tarball_version, $docker_cpan_tag) = do_cpan_docker_build($cpn);
-        push @cpans_ok, {
+        $cpans_to_add{$cpn} = {
             name    => $cpn,
             version => $cpan_version,
             tarball => $tarball_version, 
@@ -99,8 +99,13 @@ sub cpan_add {
             ]
         };
     }
-    push @{$cfg->{cpans}}, @cpans_ok;
-    save_cfg() if @cpans_ok == @cpans;
+    if(keys %cpans_to_add){
+        foreach my $cpn (@{$cfg->{cpans}//[]}){
+            $cpn = undef if defined $cpans_to_add{$cpn->{name}};
+        }
+        $cfg->{cpans} = [sort {$a->{name} cmp $b->{name}} grep {defined} @{$cfg->{cpans}//[]}, values %cpans_to_add];
+        save_cfg();
+    }
     return;
 }
 

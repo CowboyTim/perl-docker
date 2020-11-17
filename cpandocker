@@ -6,6 +6,7 @@ use FindBin;
 use JSON;
 
 our $cfg  = {};
+our $opts = cmdline_opts();
 our $what = shift @ARGV;
 print_usage() if !$what;
 read_cfg();
@@ -346,9 +347,146 @@ EOdockerfile
     return;
 }
 
-sub print_usage {
-    print <<EOusage;
-usage: $0 <add|build|push|list|rebuildall|pushall> <cpan module> [<cpan module>,...]
-EOusage
-    exit 1;
+sub show_usage {
+    my ($opts) = @_;
+    print_usage() if $opts->{help};
+    if($opts->{man}){
+        local $ENV{PAGER} = $ENV{PAGER}||'less';
+        load_cpan('FindBin')->again();
+        load_cpan('Pod::Usage');
+        Pod::Usage::pod2usage(-exitval => 1, -verbose => 2, -input => "$FindBin::Bin/$FindBin::Script");
+    }
+    return;
 }
+
+sub print_usage {
+    local $ENV{PAGER} = $ENV{PAGER}||'less';
+    load_cpan('FindBin')->again();
+    load_cpan('Pod::Usage');
+    Pod::Usage::pod2usage(-exitval => 0, -verbose => 1, -input => "$FindBin::Bin/$FindBin::Script");
+    return;
+}
+
+sub load_cpan {
+    eval "require $_[0]";
+    die $@ if $@;
+    return $_[0];
+}
+
+sub cmdline_opts {
+    load_cpan('Getopt::Long');
+    Getopt::Long::Configure('pass_through', 'no_ignore_case', 'bundling', 'no_auto_abbrev');
+    Getopt::Long::GetOptions(my $opts = {}, "cfg=s", "help|h|?!", "man|m!") or pod2usage(1);
+    show_usage($opts) if $opts->{man} or $opts->{help};
+    return $opts;
+}
+
+__END__
+=pod
+
+=head1 NAME
+
+cpandocker - easy cpan docker image maintain utility
+
+=head1 SYNOPSIS
+
+B<cpandocker> B<[OPTIONS]> B<action> B<[cpan]> B<[cpan, ...]>
+
+=head1 DESCRIPTION
+
+This is the cpandocker tool that allows to make a perl sandbox and maintain
+what cpan modules are in there via a configuration file. The configuration file
+location and/or cpandocker home can be specified on command line.
+
+cpandocker acts as a wrapper around docker. Building is done with the
+aardbeiplantje/perl and aardbeiplantje/perl:5.32.0-dev-latest docker images.
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<help|h|?>
+
+Show the usage information.
+
+=item B<man|m>
+
+Show the manpage.
+
+=back
+
+=head1 ARGUMENTS
+
+=over 4
+
+=item B<action>
+
+What to do for the list of cpan modules on the command line. Note that there
+doesn't have to be a cpan module specified, as there are actions that just list
+or manage the F<.cpandocker.json> config file.
+
+=item B<cpan>
+
+The cpan module to execute the action for, possible actions are:
+
+=over 6
+
+=item list
+
+list what cpan modules are dockerized as configuration.
+
+=item cfgsync
+
+fetch the latest information from cpan and sync this with the config.
+
+=item info
+
+fetch the cpan information from cpan for the modules that are added to the
+configuration
+
+=item add
+
+add a cpan module, note that this also allows upgrading
+
+=item build
+
+just build a module, don't add it to the configuration
+
+=item rebuildall
+
+rebuild all cpans that are configured
+
+=item version
+
+show the version of a configured cpan, this also acts as a perl module load check
+
+=item versionall
+
+show the version for all configured cpans, this also acts as a perl module load
+check for all modules that are configured.
+
+=item push
+
+push a configured and build module to the remote docker repository
+
+=item pushall
+
+push all cpans that are configured to the remote docker repository
+
+=back
+
+=back
+
+=head1 SEE ALSO
+
+L<docker(1)>, L<perl(1)>, L<cpan(1)>.
+
+=head1 AUTHORS
+
+CowboyTim <aardbeiplantje@gmail.com>
+
+=head1 REPORT BUGS
+
+github L<https://github.com/CowboyTim/perl-docker/issues>
+
+=cut

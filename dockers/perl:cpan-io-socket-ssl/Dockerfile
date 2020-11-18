@@ -1,7 +1,9 @@
 ARG perl_version=5.32.0
+ARG remote_docker_registry
+ARG docker_registry
 
 # start from the perl-dev docker
-FROM aardbeiplantje/perl:${perl_version}-dev-latest as my-perl-d
+FROM ${remote_docker_registry}${docker_registry}/perl:${perl_version}-dev-latest as my-perl-d
 
 # reset the PATH to not include /opt first
 ARG perl_version=5.32.0

@@ -55,5 +55,4 @@ build_docker.%:
 			--build-arg perl_version=$(PERL_VERSION) \
 			--cache-from $(DOCKER_REPOSITORY)/$*$(LATEST_TAG) \
 			--tag $(DOCKER_REPOSITORY)/$*$(LATEST_TAG) \
-			--tag $(DOCKER_REGISTRY)/$*$(LATEST_TAG) \
 			$(EXTRA_DOCKER_OPTS)

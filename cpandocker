@@ -61,6 +61,7 @@ sub cpandocker_add {
         };
     }
     if(keys %cpans_to_add){
+        print STDERR "adding: ".join(',',sort keys %cpans_to_add)."\n";
         foreach my $cpn (@{$cfg->{cpans}//[]}){
             $cpn = undef if defined $cpans_to_add{$cpn->{name}};
         }
@@ -102,14 +103,15 @@ sub cpandocker_version {
 
 sub cpandocker_pushall {
     foreach my $cpan_module (@{$cfg->{cpans}//[]}){
-        do_cpan_docker_push($cpan_module->{name});
+        do_cpan_docker_push($cpan_module);
     }
     return;
 }
 
 sub cpandocker_push {
     my (@cpans) = @_;
-    foreach my $cpan_module (@cpans){
+    foreach my $cpan_module (@{$cfg->{cpans}}){
+        next unless grep {$cpan_module->{name} eq $_} @cpans;
         do_cpan_docker_push($cpan_module);
     }
     return;
@@ -124,8 +126,12 @@ sub cpandocker_buildimage {
 #
 
 sub do_cpan_docker_push {
-    my ($cpan_to_push) = @_;
-    # FIXME: implement!
+    my ($cpn) = @_;
+    foreach my $tag (@{$cpn->{tag}//[]}){
+        my $tgt_tag = ($ENV{REMOTE_DOCKER_REGISTRY}?"$ENV{REMOTE_DOCKER_REGISTRY}/":"")."$ENV{DOCKER_REGISTRY}/perl:cpan-$tag";
+        cmd("docker tag $ENV{DOCKER_REPOSITORY}/perl:cpan-$tag $tgt_tag");
+        cmd("docker push $tgt_tag");
+    }
     return;
 }
 
@@ -165,7 +171,6 @@ sub get_cpan_information {
 
 sub do_cpan_version_check {
     my ($cpn) = @_;
-    local ($!,$?);
     my $tdir = "/tmp/cpan_test_${$}_$ENV{USER}";
     mkdir($tdir) or die "Error making dir $tdir: $!\n";
     print STDERR "using $tdir/Dockerfile\n";
@@ -186,15 +191,11 @@ COPY --from=tmpapp-01 / /
 COPY --from=tmpapp-02 / /
 ENTRYPOINT ["/opt/bin/perl"]
 EOdockerfile
-    $! = 0;
-    system("docker build $tdir -f $tdir/Dockerfile --tag $tmpdockername")
-        == 0 or die "problem building the $tmpdockername, quitting: $!\n";
-    $! = 0;
-    system("docker run --rm -it $tmpdockername -M$cpn->{name} -we 'print \"[$cpn->{name}] VERSION: \$".$cpn->{name}."::VERSION\\n\"'")
-        == 0 or die pretty_string_cpan($cpn)." FAILED: $!\n";
-    $! = 0;
-    system("docker image rm -f $tmpdockername")
-        == 0 or die "problem removing temp $tmpdockername: $!\n";
+    cmd("docker build $tdir -f $tdir/Dockerfile --tag $tmpdockername");
+    cmd("docker run --rm -it $tmpdockername -M$cpn->{name} -we 'print \"[$cpn->{name}] VERSION: \$".$cpn->{name}."::VERSION\\n\"'", 0)
+        or die pretty_string_cpan($cpn)." FAILED: $!\n";
+    cmd("docker image rm -f $tmpdockername", 0)
+        or die "problem removing temp $tmpdockername: $!\n";
     unlink $docker_fn;
     rmdir $tdir;
     return;
@@ -206,23 +207,23 @@ sub do_cpan_docker_build {
     my ($_d, $cpan_version, $tarball_version, $docker_cpan_tag) = get_cpan_information($cpan_to_add);
     print STDERR "will tag the docker image for $cpan_to_add with $docker_cpan_tag-$cpan_version\n";
 
-    # build docker via make?
+    # build docker with an existing Dockerfile when the directory is already there?
     my $d_dir = "$FindBin::Bin/dockers/perl:cpan-$docker_cpan_tag";
     print STDERR "checking for $d_dir\n";
     if(-d $d_dir){
-        local $ENV{LATEST_TAG} = "-$cpan_version";
-        system("make -C $FindBin::Bin build_docker.perl:cpan-$docker_cpan_tag") == 0
-            or die $!;
+        cmd("docker build $d_dir -f $d_dir/Dockerfile "
+        ." --build-arg docker_registry=$ENV{DOCKER_REGISTRY}"
+        ." --build-arg remote_docker_registry=$ENV{REMOTE_DOCKER_REGISTRY}"
+        ." --cache-from $ENV{DOCKER_REPOSITORY}/perl:cpan-$docker_cpan_tag-$cpan_version"
+        ." --tag $ENV{DOCKER_REPOSITORY}/perl:cpan-$docker_cpan_tag-$cpan_version", 0)
+            or die "problem building the $d_dir/Dockerfile, quitting: $!\n";
     } else {
         build_cpan_docker($cpan_to_add, $docker_cpan_tag, $tarball_version, $cpan_version);
     }
 
     # put extra tags
-    system("docker tag $ENV{DOCKER_REPOSITORY}/perl:cpan-$docker_cpan_tag-$cpan_version ".
-                      "$ENV{DOCKER_REPOSITORY}/perl:cpan-$docker_cpan_tag") == 0 or die $!;
-    system("docker tag $ENV{DOCKER_REPOSITORY}/perl:cpan-$docker_cpan_tag-$cpan_version ".
-                      "$ENV{DOCKER_REGISTRY}/perl:cpan-$docker_cpan_tag") == 0 or die $!;
-
+    cmd("docker tag $ENV{DOCKER_REPOSITORY}/perl:cpan-$docker_cpan_tag-$cpan_version ".
+                   "$ENV{DOCKER_REPOSITORY}/perl:cpan-$docker_cpan_tag");
     return ($cpan_version, $tarball_version, $docker_cpan_tag);
 }
 
@@ -302,13 +303,10 @@ EOdockerfile
         or die "Error closing $docker_fn: $!\n";
 
     # run docker build
-    local ($!,$?);
-    system(
-         "docker build $tdir -f $tdir/Dockerfile"
+    cmd( "docker build $tdir -f $tdir/Dockerfile"
         ." --cache-from $ENV{DOCKER_REPOSITORY}/perl:cpan-$docker_cpan_tag-$cpan_version"
         ." --tag $ENV{DOCKER_REPOSITORY}/perl:cpan-$docker_cpan_tag-$cpan_version"
-        ." --tag $ENV{DOCKER_REGISTRY}/perl:cpan-$docker_cpan_tag-$cpan_version"
-    ) == 0 or die "problem building the docker, quitting: $!\n";
+    ,0) or die "problem building the docker, quitting: $!\n";
 
     unlink $docker_fn;
     rmdir $tdir;
@@ -336,7 +334,7 @@ sub read_cfg {
     $ENV{DOCKER_PERL_DEV_TAG}    //= $cfg->{docker_perl_dev_tag}     // "$perl_version-dev-latest";
     $ENV{DOCKER_LOCAL}           //= $cfg->{docker_local}            // "docker_build_$ENV{USER}";
     $ENV{DOCKER_REGISTRY}        //= $cfg->{docker_registry}         // "aardbeiplantje";
-    $ENV{REMOTE_DOCKER_REGISTRY} //= $cfg->{remote_docker_registry}  // $ENV{DOCKER_LOCAL};
+    $ENV{REMOTE_DOCKER_REGISTRY} //= $cfg->{remote_docker_registry}  // '';
     $ENV{DOCKER_REPOSITORY}      //= $cfg->{docker_repository}       // $ENV{DOCKER_LOCAL}.'/'.$ENV{DOCKER_REGISTRY};
     return;
 }
@@ -395,6 +393,15 @@ sub cmdline_opts {
     Getopt::Long::GetOptions(my $opts = {}, "cfg=s", "help|h|?!", "man|m!") or pod2usage(1);
     show_usage($opts) if $opts->{man} or $opts->{help};
     return $opts;
+}
+
+sub cmd {
+    my ($cmd, $exception) = @_;
+    $? = 0;
+    $! = 0;
+    my $r = system($cmd);
+    $r == 0 or ($exception//1) and die $!;
+    return $r == 0;
 }
 
 __END__

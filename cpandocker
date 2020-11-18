@@ -504,6 +504,30 @@ The cpan module to execute the action for
 
 =back
 
+=head1 CPANDOCKER CONFIG
+
+TODO! Document the .cpandocker.json config
+
+=head1 ENVIRONMENT VARIABLES
+
+=over 4
+
+=item * PERL_VERSION
+
+=item * DOCKER_PERL_TAG
+
+=item * DOCKER_PERL_DEV_TAG
+
+=item * DOCKER_LOCAL
+
+=item * DOCKER_REGISTRY
+
+=item * REMOTE_DOCKER_REGISTRY
+
+=item * DOCKER_REPOSITORY
+
+=back
+
 =head1 SEE ALSO
 
 L<docker(1)>, L<perl(1)>, L<cpan(1)>.

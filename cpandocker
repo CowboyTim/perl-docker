@@ -425,55 +425,55 @@ What to do for the list of cpan modules on the command line. Note that there
 doesn't have to be a cpan module specified, as there are actions that just list
 or manage the F<.cpandocker.json> config file.
 
-=item B<cpan>
+=over 2
 
-The cpan module to execute the action for, possible actions are:
-
-=over 6
-
-=item list
+=item * list
 
 list what cpan modules are dockerized as configuration.
 
-=item cfgsync
+=item * cfgsync
 
 fetch the latest information from cpan and sync this with the config.
 
-=item info
+=item * info
 
 fetch the cpan information from cpan for the modules that are added to the
 configuration
 
-=item add
+=item * add
 
 add a cpan module, note that this also allows upgrading
 
-=item build
+=item * build
 
 just build a module, don't add it to the configuration
 
-=item rebuildall
+=item * rebuildall
 
 rebuild all cpans that are configured
 
-=item version
+=item * version
 
 show the version of a configured cpan, this also acts as a perl module load check
 
-=item versionall
+=item * versionall
 
 show the version for all configured cpans, this also acts as a perl module load
 check for all modules that are configured.
 
-=item push
+=item * push
 
 push a configured and build module to the remote docker repository
 
-=item pushall
+=item * pushall
 
 push all cpans that are configured to the remote docker repository
 
 =back
+
+=item B<cpan>
+
+The cpan module to execute the action for
 
 =back
 

@@ -12,56 +12,16 @@ print_usage() if !$what;
 read_cfg();
 {
     no strict 'refs';
-    $what = "cpan_$what";
+    $what = "cpandocker_$what";
     &$what(@ARGV);
 }
 exit 0;
 
+#------------------------------------------------------------------------------
+# cpandocker action subs
+#
 
-sub read_cfg {
-    # our config file
-    my $cpan_docker_home   = $ENV{CPAN_DOCKER_HOME}   ||= "$FindBin::Bin/";
-    my $cpan_docker_cfg_fn = $ENV{CPAN_DOCKER_CONFIG} ||= "$cpan_docker_home/.cpandocker.json";
-    $cfg = decode_json(do {local(@ARGV,$/)=$cpan_docker_cfg_fn;<>});
-    if(($cfg->{version}//'') ne '1'){
-        cpan_cfgsync();
-        save_cfg();
-    }
-
-    # config/defaults
-    my $perl_version = 
-    $ENV{PERL_VERSION}           //= $cfg->{perl_version}            // "5.32.0";
-    $ENV{DOCKER_PERL_TAG}        //= $cfg->{docker_perl_tag}         // "$perl_version";
-    $ENV{DOCKER_PERL_DEV_TAG}    //= $cfg->{docker_perl_dev_tag}     // "$perl_version-dev-latest";
-    $ENV{DOCKER_LOCAL}           //= $cfg->{docker_local}            // "docker_build_$ENV{USER}";
-    $ENV{DOCKER_REGISTRY}        //= $cfg->{docker_registry}         // "aardbeiplantje";
-    $ENV{REMOTE_DOCKER_REGISTRY} //= $cfg->{remote_docker_registry}  // $ENV{DOCKER_LOCAL};
-    $ENV{DOCKER_REPOSITORY}      //= $cfg->{docker_repository}       // $ENV{DOCKER_LOCAL}.'/'.$ENV{DOCKER_REGISTRY};
-    return;
-}
-
-sub get_cfg {
-    my ($cpan_module) = @_;
-    foreach my $cpn (@{$cfg->{cpans}//[]}){
-        return $cpn if $cpn->{name} eq $cpan_module;
-    }
-    return
-}
-
-our $_json_enc;
-sub save_cfg {
-    my $cpan_docker_home   = $ENV{CPAN_DOCKER_HOME}   ||= "$FindBin::Bin/";
-    my $cpan_docker_cfg_fn = $ENV{CPAN_DOCKER_CONFIG} ||= "$cpan_docker_home/.cpandocker.json";
-    $_json_enc //= JSON->new->utf8->allow_blessed->allow_unknown->allow_nonref->convert_blessed->pretty;
-    open(my $cfg_h, ">", $cpan_docker_cfg_fn)
-        or die "Error opening $cpan_docker_cfg_fn for write: $!\n";
-    print {$cfg_h} $_json_enc->encode($cfg);
-    close($cfg_h)
-        or die "Error opening $cpan_docker_cfg_fn for write: $!\n";
-    return;
-}
-
-sub cpan_cfgsync {
+sub cpandocker_cfgsync {
     my @new_cpans;
     foreach my $cpn (@{$cfg->{cpans}//[]}){
         push @new_cpans, scalar get_cpan_information($cpn->{name});
@@ -71,21 +31,21 @@ sub cpan_cfgsync {
     return;
 }
 
-sub cpan_list {
+sub cpandocker_list {
     foreach my $cpn (@{$cfg->{cpans}//[]}){
         print pretty_string_cpan($cpn);
     }
     return;
 }
 
-sub cpan_info {
+sub cpandocker_info {
     foreach my $cpn (@{$cfg->{cpans}//[]}){
         print pretty_string_cpan(scalar get_cpan_information($cpn->{name}));
     }
     return;
 }
 
-sub cpan_add {
+sub cpandocker_add {
     my (@cpans) = @_;
     my %cpans_to_add;
     foreach my $cpn (@cpans){
@@ -110,7 +70,7 @@ sub cpan_add {
     return;
 }
 
-sub cpan_build {
+sub cpandocker_build {
     my (@cpans) = @_;
     foreach my $cpan_module (@cpans){
         do_cpan_docker_build($cpan_module);
@@ -118,21 +78,21 @@ sub cpan_build {
     return;
 }
 
-sub cpan_rebuildall {
+sub cpandocker_rebuildall {
     foreach my $cpan_module (@{$cfg->{cpans}//[]}){
         do_cpan_docker_build($cpan_module->{name});
     }
     return;
 }
 
-sub cpan_versionall {
+sub cpandocker_versionall {
     foreach my $cpan_module (@{$cfg->{cpans}//[]}){
         do_cpan_version_check($cpan_module);
     }
     return;
 }
 
-sub cpan_version {
+sub cpandocker_version {
     my (@cpans) = @_;
     foreach my $cpan_module (@cpans){
         do_cpan_version_check(get_cfg($cpan_module));
@@ -140,20 +100,28 @@ sub cpan_version {
     return;
 }
 
-sub cpan_pushall {
+sub cpandocker_pushall {
     foreach my $cpan_module (@{$cfg->{cpans}//[]}){
         do_cpan_docker_push($cpan_module->{name});
     }
     return;
 }
 
-sub cpan_push {
+sub cpandocker_push {
     my (@cpans) = @_;
     foreach my $cpan_module (@cpans){
         do_cpan_docker_push($cpan_module);
     }
     return;
 }
+
+sub cpandocker_buildimage {
+    return;
+}
+
+#------------------------------------------------------------------------------
+# cpandocker action helper subs
+#
 
 sub do_cpan_docker_push {
     my ($cpan_to_push) = @_;
@@ -347,6 +315,54 @@ EOdockerfile
     return;
 }
 
+#------------------------------------------------------------------------------
+# cfg/options related subs
+#
+
+sub read_cfg {
+    # our config file
+    my $cpan_docker_home   = $ENV{CPAN_DOCKER_HOME}   ||= "$FindBin::Bin/";
+    my $cpan_docker_cfg_fn = $ENV{CPAN_DOCKER_CONFIG} ||= "$cpan_docker_home/.cpandocker.json";
+    $cfg = decode_json(do {local(@ARGV,$/)=$cpan_docker_cfg_fn;<>});
+    if(($cfg->{version}//'') ne '1'){
+        cpan_cfgsync();
+        save_cfg();
+    }
+
+    # config/defaults
+    my $perl_version = 
+    $ENV{PERL_VERSION}           //= $cfg->{perl_version}            // "5.32.0";
+    $ENV{DOCKER_PERL_TAG}        //= $cfg->{docker_perl_tag}         // "$perl_version";
+    $ENV{DOCKER_PERL_DEV_TAG}    //= $cfg->{docker_perl_dev_tag}     // "$perl_version-dev-latest";
+    $ENV{DOCKER_LOCAL}           //= $cfg->{docker_local}            // "docker_build_$ENV{USER}";
+    $ENV{DOCKER_REGISTRY}        //= $cfg->{docker_registry}         // "aardbeiplantje";
+    $ENV{REMOTE_DOCKER_REGISTRY} //= $cfg->{remote_docker_registry}  // $ENV{DOCKER_LOCAL};
+    $ENV{DOCKER_REPOSITORY}      //= $cfg->{docker_repository}       // $ENV{DOCKER_LOCAL}.'/'.$ENV{DOCKER_REGISTRY};
+    return;
+}
+
+sub get_cfg {
+    my ($cpan_module) = @_;
+    foreach my $cpn (@{$cfg->{cpans}//[]}){
+        return $cpn if $cpn->{name} eq $cpan_module;
+    }
+    return
+}
+
+our $_json_enc;
+sub save_cfg {
+    my $cpan_docker_home   = $ENV{CPAN_DOCKER_HOME}   ||= "$FindBin::Bin/";
+    my $cpan_docker_cfg_fn = $ENV{CPAN_DOCKER_CONFIG} ||= "$cpan_docker_home/.cpandocker.json";
+    $_json_enc //= JSON->new->utf8->allow_blessed->allow_unknown->allow_nonref->convert_blessed->pretty;
+    open(my $cfg_h, ">", $cpan_docker_cfg_fn)
+        or die "Error opening $cpan_docker_cfg_fn for write: $!\n";
+    print {$cfg_h} $_json_enc->encode($cfg);
+    close($cfg_h)
+        or die "Error opening $cpan_docker_cfg_fn for write: $!\n";
+    return;
+}
+
+
 sub show_usage {
     my ($opts) = @_;
     print_usage() if $opts->{help};
@@ -468,6 +484,10 @@ push a configured and build module to the remote docker repository
 =item * pushall
 
 push all cpans that are configured to the remote docker repository
+
+=item * buildimage
+
+builds the end docker image
 
 =back
 

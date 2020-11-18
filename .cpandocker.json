@@ -136,15 +136,6 @@
          "name" : "URI"
       },
       {
-         "version" : "2.0206",
-         "tarball" : "S/SH/SHLOMIF/XML-LibXML-2.0206.tar.gz",
-         "tag" : [
-            "xml-libxml",
-            "xml-libxml-2.0206"
-         ],
-         "name" : "XML::LibXML"
-      },
-      {
          "version" : "0.67",
          "tarball" : "K/KE/KEICHNER/XML-Reader-0.67.tar.gz",
          "tag" : [

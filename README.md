@@ -1,4 +1,9 @@
-# Introduction
+### Reporting Bugs/Feature Requests
+[![Open Bugs](https://img.shields.io/github/issues/CowboyTim/perl-docker/bug?color=d73a4a&label=bugs)](https://github.com/CowboyTim/perl-docker/issues?q=is%3Aissue+is%3Aopen+label%3Abug)
+[![Feature Requests](https://img.shields.io/github/issues/CowboyTim/perl-docker/feature-request?color=ff9001&label=feature%20requests)](https://github.com/CowboyTim/perl-docker/issues?q=is%3Aissue+label%3Afeature-request+is%3Aopen)
+[![Closed Issues](https://img.shields.io/github/issues-closed/CowboyTim/perl-docker?color=%2325CC00&label=issues%20closed)](https://github.com/CowboyTim/perl-docker/issues?q=is%3Aissue+is%3Aclosed+)
+
+## Introduction
 
 This perl is built to be used just as a docker that only contains perl. The
 perl distribution is installed in /opt and is a vanilla perl install. All bin
@@ -31,12 +36,12 @@ The perl distribution also contains busybox from the busybox docker and
 installed symlinks in /opt/bin. This is needed as e.g. /opt/bin/sh and
 /opt/bin/less is used by perldoc to show documentation.
 
-# Links
+## Links
 
 * This project is maintained on github: [CowboyTim/perl-docker](https://github.com/CowboyTim/perl-docker)
 * This docker can be fetched from docker hub: [aardbeiplantje/perl](https://hub.docker.com/r/aardbeiplantje/perl)
 
-# Tags/Images
+## Tags/Images
 
 Currently these tags are supported:
 
@@ -49,7 +54,7 @@ full OS dev for extending perl (~1.5GB):
 * `aardbeiplantje/5.32.0-dev-latest`
 
 
-# Quick reference
+## Quick reference
 
 When you run the perl docker without arguments, it reads from stdin perl code:
 
@@ -86,14 +91,14 @@ for instance list what's in the docker:
 
     $ docker run -it --rm aardbeiplantje/perl -e 'exec @ARGV' find / -xdev
 
-# Environment variables
+## Environment variables
 
 These are the environment variables defined within the docker by default to
 help running scripts:
 
 * `PATH=/opt/bin:/opt/scripts:$PATH`
 
-# Building
+## Building
 
 To build the perl docker locally, you need to have docker set up on your host.
 There's an easy to use default make target to build the perl-dev and perl
@@ -112,7 +117,7 @@ To push to docker.io as docker registry, e.g.:
     $ export REMOTE_DOCKER_REPO=aardbeiplantje
     $ make docker_push_perl
 
-# Installing CPAN modules
+## Installing CPAN modules
 
 The docker image can be extended with other tools that you might need. Easiest
 is to start from the `aardbeiplantje/perl:5.32.0-dev-latest` image as the CPAN
@@ -148,7 +153,7 @@ When this docker is built, the perl docker will be capably of using JSON:
 
     $ docker run --rm -i myperl:latest -MJSON -we 'print "$JSON::VERSION\n"'
 
-# Precompiled PERL CPAN modules
+## Precompiled PERL CPAN modules
 
 In the dockers directory, there are precompiled docker extensions. E.g.
 perl:ssl. To build that, specify a different tag:
@@ -183,7 +188,7 @@ E.g.:
         --network host \
         --tag myapp:latest 
 
-# Building PERL CPAN dockers
+## Building PERL CPAN dockers
 
 Most of the PurePerl CPAN modules will (or at least should) be possible to
 build into a docker that can be used as  a precompiled CPAN docker. Pure XS
@@ -198,7 +203,7 @@ This will use the aardbeiplantje/perl:5.32.0-dev-latest docker to make 3
 different dockers, one for each cpan specified. Note that a cpan module can
 include dependencies, those will also be added to that cpan docker at build.
 
-# TODO
+## TODO
 
 * make a trimmed runtime, although this is usually up to the needs of the project
 * make the docker cpan use the cpan module's version nr

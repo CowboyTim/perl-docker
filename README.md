@@ -167,11 +167,11 @@ app, even when they contain the same files. This is managed by docker.
 E.g.:
 
     $ cat myapp/Dockerfile
-    FROM aardbeiplantje/perl:5.32.0           as app-sb-perl
-    FROM aardbeiplantje/perl:io-socket-ssl    as app-sb-ssl
-    FROM aardbeiplantje/perl:json-xs          as app-sb-json-xs
-    FROM aardbeiplantje/perl:json-pp          as app-sb-json-pp
-    FROM aardbeiplantje/perl:json             as app-sb-json
+    FROM aardbeiplantje/perl:5.32.0                as app-sb-perl
+    FROM aardbeiplantje/perl:cpan-io-socket-ssl    as app-sb-ssl
+    FROM aardbeiplantje/perl:cpan-json-xs          as app-sb-json-xs
+    FROM aardbeiplantje/perl:cpan-json-pp          as app-sb-json-pp
+    FROM aardbeiplantje/perl:cpan-json             as app-sb-json
     FROM scratch
     COPY --from=app-sb-perl    / /
     COPY --from=app-sb-ssl     / /

@@ -2,6 +2,7 @@
 [![Open Bugs](https://img.shields.io/github/issues/CowboyTim/perl-docker/bug?color=d73a4a&label=bugs)](https://github.com/CowboyTim/perl-docker/issues?q=is%3Aissue+is%3Aopen+label%3Abug)
 [![Feature Requests](https://img.shields.io/github/issues/CowboyTim/perl-docker/feature-request?color=ff9001&label=feature%20requests)](https://github.com/CowboyTim/perl-docker/issues?q=is%3Aissue+label%3Afeature-request+is%3Aopen)
 [![Closed Issues](https://img.shields.io/github/issues-closed/CowboyTim/perl-docker?color=%2325CC00&label=issues%20closed)](https://github.com/CowboyTim/perl-docker/issues?q=is%3Aissue+is%3Aclosed+)
+[![Docker Pulls](https://img.shields.io/docker/pulls/aardbeiplantje/perl?color=%2325CC00&label=issues%20closed)](https://hub.docker.com/r/aardbeiplantje/perl)
 
 ## Introduction
 

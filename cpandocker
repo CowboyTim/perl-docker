@@ -516,17 +516,48 @@ TODO! Document the .cpandocker.json config
 
 =item * PERL_VERSION
 
+The perl version. For now this shouldn't be set, or always be set to 5.32.0.
+
 =item * DOCKER_PERL_TAG
+
+The docker tag to to use for checks. Note that for the moment this is only used
+as a check whether the built cpan module would work with the runtime
+aardbeiplantje/perl docker.
 
 =item * DOCKER_PERL_DEV_TAG
 
+This is the docker tag to use when making a cpan module build
+
 =item * DOCKER_LOCAL
+
+The local docker image prefix part for a default of DOCKER_REPOSITORY if
+DOCKER_REGISTRY nor docker_registry isn't set.
+
+The DOCKER_LOCAL is defaulted to docker_build_$USER.
 
 =item * DOCKER_REGISTRY
 
+This is the docker registry, for the moment "aardbeiplantje". It's used for
+local tagging, and pushing to the remote docker repository.
+
+This can be used to build cpans to the locally built perl-dev docker image,
+e.g.:
+
+    $ make perl_docker
+    $ DOCKER_REGISTRY=docker_build_$USER/aardbeiplantje ./cpandocker add Redis
+
 =item * REMOTE_DOCKER_REGISTRY
 
+This overrides the remote docker registry part when doing a push. Default this
+is not set, which is a default to pushing to docker.io.
+
 =item * DOCKER_REPOSITORY
+
+This is the registry/repository to use when building and making local tags.
+This is defaulted to a concatenation of the $DOCKER_LOCAL/$DOCKER_REGISTRY
+which makes for a good default:
+
+    docker_build_$USER/aardbeiplantje
 
 =back
 

@@ -247,8 +247,10 @@ FROM $ENV{DOCKER_REGISTRY}/perl:$ENV{DOCKER_PERL_DEV_TAG} as my-perl-d
 # set some ENV vars, to be sure. Also, we will build in /newopt
 # so PERL5LIB has to contain that
 ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/$perl_version/x86_64/CORE
-# see cpan_config.pl for DESTDIR/INSTALL_BASE/PERL5LIB!! Add trailing slash (/)!!
+# see cpan_config.pl for CPAN_HOME/DESTDIR/INSTALL_BASE/PERL5LIB!!
+# Add trailing slash to DESTDIR (/)!!
 ENV DESTDIR=/newopt/
+ENV CPAN_HOME=/opt/tmp/cpan
 ENV INSTALL_BASE=" DESTDIR=\$DESTDIR"
 ENV PERL5LIB=\\
 \$DESTDIR/opt/site_perl/lib/perl5:\\
@@ -351,7 +353,7 @@ our $_json_enc;
 sub save_cfg {
     my $cpan_docker_home   = $ENV{CPAN_DOCKER_HOME}   ||= "$FindBin::Bin/";
     my $cpan_docker_cfg_fn = $ENV{CPAN_DOCKER_CONFIG} ||= "$cpan_docker_home/.cpandocker.json";
-    $_json_enc //= JSON->new->utf8->allow_blessed->allow_unknown->allow_nonref->convert_blessed->pretty;
+    $_json_enc //= JSON->new->utf8->allow_blessed->allow_unknown->allow_nonref->convert_blessed->pretty->canonical;
     open(my $cfg_h, ">", $cpan_docker_cfg_fn)
         or die "Error opening $cpan_docker_cfg_fn for write: $!\n";
     print {$cfg_h} $_json_enc->encode($cfg);

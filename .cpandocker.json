@@ -1,22 +1,22 @@
 {
    "cpans" : [
       {
-         "version" : "2.33",
+         "name" : "Crypt::CBC",
          "tag" : [
             "crypt-cbc",
             "crypt-cbc-2.33"
          ],
          "tarball" : "L/LD/LDS/Crypt-CBC-2.33.tar.gz",
-         "name" : "Crypt::CBC"
+         "version" : "2.33"
       },
       {
          "name" : "Date::Manip",
-         "version" : "6.82",
          "tag" : [
             "date-manip",
             "date-manip-6.82"
          ],
-         "tarball" : "S/SB/SBECK/Date-Manip-6.82.tar.gz"
+         "tarball" : "S/SB/SBECK/Date-Manip-6.82.tar.gz",
+         "version" : "6.82"
       },
       {
          "name" : "Digest::SHA",
@@ -28,31 +28,31 @@
          "version" : "6.02"
       },
       {
+         "name" : "HTML::Parser",
          "tag" : [
             "html-parser",
             "html-parser-3.75"
          ],
          "tarball" : "C/CA/CAPOEIRAB/HTML-Parser-3.75.tar.gz",
-         "version" : "3.75",
-         "name" : "HTML::Parser"
+         "version" : "3.75"
       },
       {
-         "tarball" : "O/OA/OALDERS/HTTP-Date-6.05.tar.gz",
+         "name" : "HTTP::Date",
          "tag" : [
             "http-date",
             "http-date-6.05"
          ],
-         "version" : "6.05",
-         "name" : "HTTP::Date"
+         "tarball" : "O/OA/OALDERS/HTTP-Date-6.05.tar.gz",
+         "version" : "6.05"
       },
       {
-         "version" : "0.87",
+         "name" : "IO::All",
          "tag" : [
             "io-all",
             "io-all-0.87"
          ],
          "tarball" : "F/FR/FREW/IO-All-0.87.tar.gz",
-         "name" : "IO::All"
+         "version" : "0.87"
       },
       {
          "name" : "IO::Socket::SSL",
@@ -65,111 +65,120 @@
       },
       {
          "name" : "JSON",
-         "version" : "4.02",
          "tag" : [
             "json",
             "json-4.02"
          ],
-         "tarball" : "I/IS/ISHIGAKI/JSON-4.02.tar.gz"
+         "tarball" : "I/IS/ISHIGAKI/JSON-4.02.tar.gz",
+         "version" : "4.02"
       },
       {
          "name" : "JSON::PP",
-         "tarball" : "I/IS/ISHIGAKI/JSON-PP-4.05.tar.gz",
          "tag" : [
             "json-pp",
             "json-pp-4.05"
          ],
+         "tarball" : "I/IS/ISHIGAKI/JSON-PP-4.05.tar.gz",
          "version" : "4.05"
       },
       {
          "name" : "JSON::XS",
-         "tarball" : "M/ML/MLEHMANN/JSON-XS-4.03.tar.gz",
          "tag" : [
             "json-xs",
             "json-xs-4.03"
          ],
+         "tarball" : "M/ML/MLEHMANN/JSON-XS-4.03.tar.gz",
          "version" : "4.03"
       },
       {
          "name" : "LWP::UserAgent",
-         "version" : "6.49",
-         "tarball" : "O/OA/OALDERS/libwww-perl-6.49.tar.gz",
          "tag" : [
             "lwp-useragent",
             "lwp-useragent-6.49"
-         ]
+         ],
+         "tarball" : "O/OA/OALDERS/libwww-perl-6.49.tar.gz",
+         "version" : "6.49"
+      },
+      {
+         "name" : "Redis",
+         "tag" : [
+            "redis",
+            "redis-1.998"
+         ],
+         "tarball" : "D/DA/DAMS/Redis-1.998.tar.gz",
+         "version" : "1.998"
       },
       {
          "name" : "Socket6",
-         "tarball" : "U/UM/UMEMOTO/Socket6-0.29.tar.gz",
          "tag" : [
             "socket6",
             "socket6-0.29"
          ],
+         "tarball" : "U/UM/UMEMOTO/Socket6-0.29.tar.gz",
          "version" : "0.29"
       },
       {
+         "name" : "Storable",
          "tag" : [
             "storable",
             "storable-3.15"
          ],
          "tarball" : "X/XS/XSAWYERX/Storable-3.15.tar.gz",
-         "version" : "3.15",
-         "name" : "Storable"
+         "version" : "3.15"
       },
       {
          "name" : "Text::CSV_XS",
-         "tarball" : "H/HM/HMBRAND/Text-CSV_XS-1.44.tgz",
          "tag" : [
             "text-csv_xs",
             "text-csv_xs-1.44"
          ],
+         "tarball" : "H/HM/HMBRAND/Text-CSV_XS-1.44.tgz",
          "version" : "1.44"
       },
       {
-         "tarball" : "O/OA/OALDERS/URI-5.05.tar.gz",
+         "name" : "URI",
          "tag" : [
             "uri",
             "uri-5.05"
          ],
-         "version" : "5.05",
-         "name" : "URI"
+         "tarball" : "O/OA/OALDERS/URI-5.05.tar.gz",
+         "version" : "5.05"
       },
       {
-         "version" : "0.67",
-         "tarball" : "K/KE/KEICHNER/XML-Reader-0.67.tar.gz",
+         "name" : "XML::Reader",
          "tag" : [
             "xml-reader",
             "xml-reader-0.67"
          ],
-         "name" : "XML::Reader"
+         "tarball" : "K/KE/KEICHNER/XML-Reader-0.67.tar.gz",
+         "version" : "0.67"
       },
       {
-         "tarball" : "G/GR/GRANTM/XML-SAX-1.02.tar.gz",
+         "name" : "XML::SAX",
          "tag" : [
             "xml-sax",
             "xml-sax-1.02"
          ],
-         "version" : "1.02",
-         "name" : "XML::SAX"
+         "tarball" : "G/GR/GRANTM/XML-SAX-1.02.tar.gz",
+         "version" : "1.02"
       },
       {
          "name" : "XML::Simple",
-         "version" : "2.25",
-         "tarball" : "G/GR/GRANTM/XML-Simple-2.25.tar.gz",
          "tag" : [
             "xml-simple",
             "xml-simple-2.25"
-         ]
+         ],
+         "tarball" : "G/GR/GRANTM/XML-Simple-2.25.tar.gz",
+         "version" : "2.25"
       },
       {
-         "version" : "0.900",
+         "name" : "XML::Writer",
          "tag" : [
             "xml-writer",
             "xml-writer-0.900"
          ],
          "tarball" : "J/JO/JOSEPHW/XML-Writer-0.900.tar.gz",
-         "name" : "XML::Writer"
+         "version" : "0.900"
       }
    ],
    "version" : "1"

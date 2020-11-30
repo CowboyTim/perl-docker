@@ -4,6 +4,7 @@ use strict; use warnings;
 
 use FindBin;
 use JSON;
+use File::Copy;
 
 our $cfg  = {};
 our $opts = cmdline_opts();
@@ -82,6 +83,7 @@ sub cpandocker_build {
 sub cpandocker_rebuildall {
     foreach my $cpan_module (@{$cfg->{cpans}//[]}){
         do_cpan_docker_build($cpan_module->{name});
+        cmd("docker image prune -f");
     }
     return;
 }
@@ -171,7 +173,7 @@ sub get_cpan_information {
 
 sub do_cpan_version_check {
     my ($cpn) = @_;
-    my $tdir = "/tmp/cpan_test_${$}_$ENV{USER}";
+    my $tdir = "/tmp/cpan_test_${$}_$ENV{USER}.".time();
     mkdir($tdir) or die "Error making dir $tdir: $!\n";
     print STDERR "using $tdir/Dockerfile\n";
     $! = 0;
@@ -231,9 +233,13 @@ sub build_cpan_docker {
     my ($cpan_to_add, $docker_cpan_tag, $tarball_version, $cpan_version) = @_;
 
     # make a temp dir + Dockerfile
-    my $tdir = "/tmp/dockerize_cpan_${$}_$ENV{USER}";
+    my $tdir = "/tmp/dockerize_cpan_${$}_$ENV{USER}.".time();
     mkdir($tdir) or die "Error making dir $tdir: $!\n";
     print STDERR "using $tdir/Dockerfile\n";
+
+    # cpan_config.pl
+    File::Copy::copy("$FindBin::Bin/dockers/perl-dev/cpan_config.pl", "$tdir/cpan_config.pl")
+        or die "Error copy cpan_config.pl: $!\n";
 
     # Dockerfile
     my $perl_version = $ENV{PERL_VERSION};
@@ -244,18 +250,31 @@ sub build_cpan_docker {
 # start from the perl-dev docker
 FROM $ENV{DOCKER_REGISTRY}/perl:$ENV{DOCKER_PERL_DEV_TAG} as my-perl-d
 
+# start clean, or else we mis dependencies (sadly enough)
+# FIXME: split build_requires from requires?!
+RUN rm -rf /opt/cpan/home
+RUN rm -rf /opt/cpan/install
+COPY cpan_config.pl /tmp/
+
 # set some ENV vars, to be sure. Also, we will build in /newopt
 # so PERL5LIB has to contain that
 ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/$perl_version/x86_64/CORE
 # see cpan_config.pl for CPAN_HOME/DESTDIR/INSTALL_BASE/PERL5LIB!!
 # Add trailing slash to DESTDIR (/)!!
 ENV DESTDIR=/newopt/
-ENV CPAN_HOME=/opt/tmp/cpan
-ENV INSTALL_BASE=" DESTDIR=\$DESTDIR"
+ENV CPAN_HOME=/opt/cpan/home
+ENV CPAN_LOCAL=/opt/cpan/install
 ENV PERL5LIB=\\
+\$CPAN_LOCAL/opt/site_perl/lib/perl5:\\
+\$CPAN_LOCAL/opt/site_perl/lib/perl5/site_perl/auto:\\
+\$CPAN_LOCAL/opt/site_perl/lib/perl5/site_perl/$perl_version:\\
+\$CPAN_LOCAL/opt/site_perl/lib/perl5/site_perl/$perl_version/auto:\\
+\$CPAN_LOCAL/opt/site_perl/lib/perl5/site_perl/$perl_version/x86_64-linux:\\
+\$CPAN_LOCAL/opt/site_perl/lib/perl5/site_perl/$perl_version/x86_64-linux/auto:\\
 \$DESTDIR/opt/site_perl/lib/perl5:\\
 \$DESTDIR/opt/site_perl/lib/perl5/site_perl/auto:\\
 \$DESTDIR/opt/site_perl/lib/perl5/site_perl/$perl_version:\\
+\$DESTDIR/opt/site_perl/lib/perl5/site_perl/$perl_version/auto:\\
 \$DESTDIR/opt/site_perl/lib/perl5/site_perl/$perl_version/x86_64-linux:\\
 \$DESTDIR/opt/site_perl/lib/perl5/site_perl/$perl_version/x86_64-linux/auto:\\
 /opt/lib/perl5:\\
@@ -263,24 +282,26 @@ ENV PERL5LIB=\\
 /opt/lib/perl5/site_perl/auto:\\
 /opt/lib/perl5/site_perl/$perl_version/:\\
 /opt/lib/perl5/site_perl/$perl_version/auto:\\
-/opt/lib/perl5/site_perl/$perl_version/x86_64:\\
-/opt/lib/perl5/site_perl/$perl_version/x86_64/auto:\\
+/opt/lib/perl5/site_perl/$perl_version/x86_64-linux:\\
+/opt/lib/perl5/site_perl/$perl_version/x86_64-linux/auto:\\
 /opt/lib/perl5/auto:\\
 /opt/lib/perl5/$perl_version:\\
 /opt/lib/perl5/$perl_version/auto:\\
-/opt/lib/perl5/$perl_version/x86_64:\\
-/opt/lib/perl5/$perl_version/x86_64/auto
+/opt/lib/perl5/$perl_version/x86_64-linux:\\
+/opt/lib/perl5/$perl_version/x86_64-linux/auto
+
+RUN echo \$PERL5LIB
 
 # actually run cpan install
-RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti \\
-    $tarball_version \\
-    ; rm -rf \$DESTDIR/opt/site_perl/share                     \\
-    ; rm -rf \$DESTDIR/opt/site_perl/man                       \\
-    ; rm -rf \$DESTDIR/opt/lib                                 \\
-    ; find   \$DESTDIR/ -type f -name '.packlist' |xargs rm -f \\
-    ; find   \$DESTDIR/ -type f -name '.pc'       |xargs rm -f \\
-    ; find   \$DESTDIR/ -type f -name '.h'        |xargs rm -f \\
-    ; find   \$DESTDIR/ -type f -name '.pod'      |xargs rm -f \\
+RUN /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -T    -i \\
+    $tarball_version                                            \\
+    ; rm -rf \$DESTDIR/opt/site_perl/share                      \\
+    ; rm -rf \$DESTDIR/opt/site_perl/man                        \\
+    ; rm -rf \$DESTDIR/opt/lib                                  \\
+    ; find   \$DESTDIR/ -type f -name '.packlist' |xargs rm -f  \\
+    ; find   \$DESTDIR/ -type f -name '.pc'       |xargs rm -f  \\
+    ; find   \$DESTDIR/ -type f -name '.h'        |xargs rm -f  \\
+    ; find   \$DESTDIR/ -type f -name '.pod'      |xargs rm -f  \\
     ; exit 0
 # and a simple test
 RUN /opt/bin/perl -M$cpan_to_add -we 'print "[OK] CPAN TEST 1 ${cpan_to_add} built, version: \$${cpan_to_add}::VERSION\\n"'
@@ -310,7 +331,7 @@ EOdockerfile
         ." --tag $ENV{DOCKER_REPOSITORY}/perl:cpan-$docker_cpan_tag-$cpan_version"
     ,0) or die "problem building the docker, quitting: $!\n";
 
-    unlink $docker_fn;
+    unlink "$tdir/$_" for glob($tdir);
     rmdir $tdir;
     return;
 }

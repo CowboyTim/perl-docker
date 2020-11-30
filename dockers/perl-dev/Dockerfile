@@ -43,6 +43,7 @@ RUN yum install -y   \
         patch;       \
     yum clean all;   \
     rm -rf /var/lib/yum/repos; \
+    rm -rf /var/cache/yum; \
     exit 0
 
 # now we add OS dependencies from / to /opt, as later on we will be squashing
@@ -138,7 +139,6 @@ RUN \
     && mv /bin/sh.b /bin/sh                                                                  \
     ; (cd /opt/bin && rm bash sh && ln -s busybox sh) && rm /opt/lib64/libtinfo*             \
     ; rm -rf /opt/src/perl                                                                   \
-    ; rm -rf /opt/tmp/cpan                                                                   \
     ; rm -rf /opt/src                                                                        \
     ; rm -rf /opt/share                                                                      \
     ; rm -rf /opt/man                                                                        \
@@ -149,70 +149,67 @@ RUN \
 
 WORKDIR /
 
-ENV INSTALL_BASE=/tmp/cpan/local
+# config ENV variables for cpan_config.pl
+ENV CPAN_HOME=/opt/cpan/home
+ENV CPAN_LOCAL=/opt/cpan/install
+ENV DESTDIR=$CPAN_LOCAL
 ENV LD_LIBRARY_PATH=/opt/lib64:/opt/lib:/opt/lib/perl5/${perl_version}/x86_64/CORE
 ENV PERL5LIB=\
-$INSTALL_BASE/lib/perl5:\
-$INSTALL_BASE/lib/perl5/auto:\
-$INSTALL_BASE/lib/perl5/site_perl:\
-$INSTALL_BASE/lib/perl5/site_perl/auto:\
-$INSTALL_BASE/lib/perl5/x86_64:\
-$INSTALL_BASE/lib/perl5/x86_64/auto:\
+$CPAN_LOCAL/opt/site_perl/lib/perl5:\
+$CPAN_LOCAL/opt/site_perl/lib/perl5/site_perl:\
+$CPAN_LOCAL/opt/site_perl/lib/perl5/site_perl/auto:\
+$CPAN_LOCAL/opt/site_perl/lib/perl5/site_perl/${perl_version}/:\
+$CPAN_LOCAL/opt/site_perl/lib/perl5/site_perl/${perl_version}/auto:\
+$CPAN_LOCAL/opt/site_perl/lib/perl5/site_perl/${perl_version}/x86_64-linux:\
+$CPAN_LOCAL/opt/site_perl/lib/perl5/site_perl/${perl_version}/x86_64-linux/auto:\
 /opt/lib/perl5:\
 /opt/lib/perl5/site_perl:\
 /opt/lib/perl5/site_perl/auto:\
 /opt/lib/perl5/site_perl/${perl_version}/:\
 /opt/lib/perl5/site_perl/${perl_version}/auto:\
-/opt/lib/perl5/site_perl/${perl_version}/x86_64:\
-/opt/lib/perl5/site_perl/${perl_version}/x86_64/auto:\
+/opt/lib/perl5/site_perl/${perl_version}/x86_64-linux:\
+/opt/lib/perl5/site_perl/${perl_version}/x86_64-linux/auto:\
 /opt/lib/perl5/auto:\
 /opt/lib/perl5/${perl_version}:\
 /opt/lib/perl5/${perl_version}/auto:\
-/opt/lib/perl5/${perl_version}/x86_64:\
-/opt/lib/perl5/${perl_version}/x86_64/auto
+/opt/lib/perl5/${perl_version}/x86_64-linux:\
+/opt/lib/perl5/${perl_version}/x86_64-linux/auto
 
 # cpan config
 COPY cpan_config.pl /tmp/
 
-# install CPAN modules for CPAN in INSTALL_BASE=/tmp/cpan/local. This is
-# handled by cpan_config.pl. This is because we don't want cpan-needed modules
-# in the end docker, we can't do anything with those and they take up space.
-# Best is to look out for those while installing cpan modules that are needed,
-# often they bring in dependencies that aren't needed later on at runtime
+# install CPAN modules for CPAN separately . This is handled by cpan_config.pl.
+# This is because we don't want cpan-needed modules in the end docker, we can't
+# do anything with those and they take up space.  Best is to look out for those
+# while installing cpan modules that are needed, often they bring in
+# dependencies that aren't needed later on at runtime
 RUN \
-       /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  CPAN                  \
-    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  YAML                  \
-    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  ExtUtils::PkgConfig   \
-    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  ExtUtils::Helpers     \
-    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  HTTP::Date            \
-    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  HTML::Tiny            \
-    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  install               \
-    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Canary::Stability     \
-    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Algorithm::Diff       \
-    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Spiffy                \
-    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Text::Diff            \
-    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test::Base            \
-    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test::Deep            \
-    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test::LeakTrace       \
-    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  inc::latest           \
-    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Module::Build         \
-    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  common::sense         \
-    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test::More            \
-    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test::Simple          \
-    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test::Builder         \
-    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test::Harness         \
-    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test2                 \
-    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test2::Formatter      \
-    || exit 1                                                                        \
-    ; rm -rf /opt/tmp/cpan                                                           \
-    ; rm -rf /opt/src                                                                \
-    ; rm -rf /opt/share                                                              \
-    ; rm -rf /opt/man                                                                \
-    ; rm -rf /opt/include                                                            \
-    ; rm -rf /opt/games                                                              \
-    ; rm -rf /opt/perl                                                               \
-    ; rm -rf /opt/lib/python*                                                        \
-    ; find /opt/lib/perl5/ -type f -name '.packlist'|xargs rm -f                     \
+       /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  CPAN                      \
+    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  ExtUtils::PkgConfig       \
+    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  ExtUtils::Helpers         \
+    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  ExtUtils::Config          \
+    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  ExtUtils::InstallPaths    \
+    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  install                   \
+    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Text::Diff                \
+    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test::Base                \
+    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test::Deep                \
+    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test::LeakTrace           \
+    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  inc::latest               \
+    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Module::Build             \
+    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Module::Build::Tiny       \
+    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  common::sense             \
+    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test::More                \
+    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test::Simple              \
+    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test::Builder             \
+    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test::Harness             \
+    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test2                     \
+    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test2::Formatter          \
+    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test::SharedFork          \
+    && /opt/bin/perl /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  Test::Fatal               \
+    || exit 1                                                                            \
+    ; rm -rf /opt/share                                                                  \
+    ; rm -rf /opt/man                                                                    \
+    ; find /opt/lib/perl5/ -type f -name '.packlist'|xargs rm -f                         \
     ; mkdir -p /opt/tmp && chmod 1777 /opt/tmp
 
 # for testing, add the core modules test script
@@ -234,14 +231,6 @@ ENV PATH=/opt/bin/:/opt:$PATH
 # reset the default cpan install, this way, new cpan modules go to site_perl
 ENV INSTALL_BASE=
 
-# install CPAN modules for perl itself in /opt, keep this 1 cpan per RUN for
-# docker's caching features. Use the correct INSTALL_BASE=/opt for this. Note
-# that it's probably better to do that in the docker that inherit from this
-# docker.
-#
-# temp use for cpan:
-# E.g.:
-# RUN INSTALL_BASE=/tmp/cpan/local /opt/bin/cpan -j /tmp/cpan_config.pl -Ti  CPAN
 #
 # add in the perl docker:
 # E.g.:

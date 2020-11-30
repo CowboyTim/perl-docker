@@ -7,7 +7,7 @@ ARG perl_version=5.32.0
 FROM ${remote_docker_registry}${docker_registry}/perl:${perl_version}-dev-latest as dev-sb-perl
 
 # cleanup cpan cache, this isn't needed for a runtime perl
-RUN rm -rf /opt/tmp/cpan
+RUN rm -rf /opt/cpan
 
 # start new to have an empty layer, we basically squash the docker here
 FROM scratch

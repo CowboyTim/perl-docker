@@ -3,6 +3,7 @@ no warnings 'once';
 my $b_dir        = "/opt/";
 my $base_dir     = $ENV{CPAN_HOME}    || "/opt/tmp/cpan";
 my $install_base = $ENV{INSTALL_BASE};
+my $destdir      = $ENV{DESTDIR};
 $ENV{PERL5LIB} ||= "";
 $ENV{PERL5LIB}  .= "$b_dir/lib/perl5:$b_dir/lib/perl5/auto:$b_dir/lib/perl5/x86_64:$b_dir/lib/perl5/x86_64/auto";
 $CPAN::Config = {
@@ -36,13 +37,13 @@ $CPAN::Config = {
   'load_module_verbosity' => q[none],
   'make' => q[make],
   'make_arg' => q[-j8],
-  'make_install_arg' => "INSTALLDIRS=site ".($install_base?"INSTALL_BASE=$install_base":""),
+  'make_install_arg' => ($destdir?"DESTDIR=$destdir":""),
   'make_install_make_command' => q[make],
-  'makepl_arg' => "INSTALLDIRS=site ".($install_base?"INSTALL_BASE=$install_base":""),
+  'makepl_arg' => "INSTALLDIRS=site",
   'mbuild_arg' => q[],
-  'mbuild_install_arg' => "INSTALLDIRS=site ".($install_base?"INSTALL_BASE=$install_base":""),
-  'mbuild_install_build_command' => q[./Build],
-  'mbuildpl_arg' => "--installdirs site ".($install_base?"--install_base $install_base":""),
+  'mbuild_install_arg' => "".($destdir?"--destdir $destdir":""),
+  'mbuild_install_build_command' => "MAKEFLAGS=-j8 ./Build",
+  'mbuildpl_arg' => "--installdirs site ".($destdir?"--destdir $destdir":"")." ".($install_base?"--install_base=$install_base":""),
   'no_proxy' => q[],
   'pager' => q[less],
   'patch' => q[patch],

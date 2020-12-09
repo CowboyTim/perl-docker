@@ -1,3 +1,4 @@
+USER                       ?= builduser
 DOCKER_LOCAL               ?= docker_build_$(USER)
 DOCKER_REGISTRY            ?= aardbeiplantje
 REMOTE_DOCKER_REGISTRY     ?= $(DOCKER_LOCAL)

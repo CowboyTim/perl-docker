@@ -1,0 +1,9 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - yum install -y docker 
+  build:
+    commands:
+      - make perl_docker

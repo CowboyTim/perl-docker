@@ -3,7 +3,7 @@ version: 0.2
 phases:
   install:
     commands:
-      - yum install -y docker 
+      - yum install -y make 
   build:
     commands:
       - make perl_docker

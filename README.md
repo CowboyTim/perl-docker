@@ -52,7 +52,7 @@ full runtime (~60MB):
 * `aardbeiplantje/perl:latest`
 
 full OS dev for extending perl (~1.5GB):
-* `aardbeiplantje/5.32.0-dev-latest`
+* `aardbeiplantje/perl:5.32.0-dev-latest`
 
 
 ## Quick reference

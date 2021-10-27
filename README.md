@@ -17,10 +17,10 @@ part of this docker, instead, the glibc version where perl is built against is
 copied to /opt/lib64.
 
 This has a couple of advantages and disadvantages:
-* the size is very small and to the point: ~60MB
-* size can be reduced even more for pure runtime perl dockers: ~34MB
-* only 1 perl in the docker image
-* you can't add cpan modules in the docker itself (but there's a perl-dev docker image)
+* the size is very small: ~60MB
+* the size can be reduced even more for runtime perl dockers: ~34MB
+* there's only 1 perl in the docker image
+* you can't add cpan modules to the docker image (but there's a perl-dev docker image to allow this)
 
 The restriction of not being able to add CPAN modules from cpan can easily be
 fixed by making a new docker where you combine the perl docker with the

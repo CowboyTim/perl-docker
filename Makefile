@@ -14,10 +14,11 @@ all: perl_docker
 perl_docker: build_docker.perl-dev build_docker.perl docker_tag_perl docker_prune
 
 build_docker.perl-dev:
-		docker build \
+		docker buildx create --name anybuilder; \
+		docker buildx use anybuilder; \
+		docker buildx build \
 			./dockers/perl-dev \
 			-f ./dockers/perl-dev/Dockerfile \
-			--network host \
 			$(DOCKER_OPTS) \
 			--build-arg docker_registry=$(DOCKER_REGISTRY) \
 			--build-arg remote_docker_registry=$(REMOTE_DOCKER_REGISTRY)/ \
